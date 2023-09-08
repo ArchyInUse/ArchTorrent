@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 
-namespace ArchTorrent
+namespace ArchTorrent.Core
 {
     public static partial class Logger
     {

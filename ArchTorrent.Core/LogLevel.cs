@@ -1,4 +1,4 @@
-﻿namespace ArchTorrent
+﻿namespace ArchTorrent.Core
 {
     public static partial class Logger
     {

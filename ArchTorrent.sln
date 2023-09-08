@@ -3,12 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32421.90
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArchTorrent", "ArchTorrent\ArchTorrent.csproj", "{A279DA34-FD4D-4C4F-A9BB-BD38F6D9306A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ArchTorrent", "ArchTorrent\ArchTorrent.csproj", "{A279DA34-FD4D-4C4F-A9BB-BD38F6D9306A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CF4412B2-1D11-4D2F-9202-52B7713FA6F3}"
 	ProjectSection(SolutionItems) = preProject
 		sample.torrent = sample.torrent
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ArchTorrent.Core", "ArchTorrent.Core\ArchTorrent.Core.csproj", "{FDC72343-2E8E-40E8-AB5C-3E073E32861A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArchTorrent.Bencode", "ArchTorrent.Bencode\ArchTorrent.Bencode.csproj", "{B3216D70-2AB4-489F-BC9D-7D1E7DB127E5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +24,14 @@ Global
 		{A279DA34-FD4D-4C4F-A9BB-BD38F6D9306A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A279DA34-FD4D-4C4F-A9BB-BD38F6D9306A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A279DA34-FD4D-4C4F-A9BB-BD38F6D9306A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDC72343-2E8E-40E8-AB5C-3E073E32861A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDC72343-2E8E-40E8-AB5C-3E073E32861A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDC72343-2E8E-40E8-AB5C-3E073E32861A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDC72343-2E8E-40E8-AB5C-3E073E32861A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3216D70-2AB4-489F-BC9D-7D1E7DB127E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3216D70-2AB4-489F-BC9D-7D1E7DB127E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3216D70-2AB4-489F-BC9D-7D1E7DB127E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3216D70-2AB4-489F-BC9D-7D1E7DB127E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
