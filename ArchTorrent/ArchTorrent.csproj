@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ArchTorrent.Bencode\ArchTorrent.Bencode.csproj" />
     <ProjectReference Include="..\ArchTorrent.Core\ArchTorrent.Core.csproj" />
   </ItemGroup>
 

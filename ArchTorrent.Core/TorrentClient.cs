@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using ArchTorrent.Core.Torrents;
 
 namespace ArchTorrent.Core
 {
@@ -28,7 +29,7 @@ namespace ArchTorrent.Core
             byte[] buffer = Encoding.UTF8.GetBytes(content);
             try
             {
-                udpClient.BeginSend(buffer, buffer.Length, new IPEndPoint("www.");
+                //udpClient.BeginSend(buffer, buffer.Length, new IPEndPoint("www.");
             }
             catch (Exception ex)
             {
