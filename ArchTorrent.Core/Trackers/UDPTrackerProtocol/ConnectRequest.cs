@@ -15,6 +15,8 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
 
         public Int32 transaction_id;
 
+        public const int BYTE_COUNT = 16;
+
         public ConnectRequest()
         {
             // random 32-bit integer
@@ -24,7 +26,7 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
 
         public byte[] GetBytes()
         {
-            byte[] bytes = new byte[16];
+            byte[] bytes = new byte[BYTE_COUNT];
             byte[] protocolId, action, transactionId;
 
             protocolId = BitConverter.GetBytes(protocol_id);

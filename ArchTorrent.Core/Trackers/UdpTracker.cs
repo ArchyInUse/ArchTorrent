@@ -6,6 +6,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using ArchTorrent.Core.Torrents;
+using ArchTorrent.Core.Trackers.UDPTrackerProtocol;
 using BencodeNET.Parsing;
 
 namespace ArchTorrent.Core.Trackers
@@ -14,9 +16,14 @@ namespace ArchTorrent.Core.Trackers
     {
         public string AnnounceUrl { get; set; }
         public Uri AnnounceURI { get => new Uri(AnnounceUrl, UriKind.Absolute); }
-        public UdpTracker(string announceURL)
+        public Torrent Torrent { get; set; }
+
+        public List<Peer> Peers { get; set; } = new List<Peer>();
+
+        public UdpTracker(Torrent torrent)
         {
-            AnnounceUrl = announceURL;
+            Torrent = torrent;
+            AnnounceUrl = torrent.AnnounceURL;
             CancelTokenSrc = new CancellationTokenSource();
             CancellationToken = CancelTokenSrc.Token;
         }
@@ -32,7 +39,7 @@ namespace ArchTorrent.Core.Trackers
             {
                 hostInfo = Dns.GetHostEntry(AnnounceURI.DnsSafeHost);
             }
-            catch (SocketException se)
+            catch (SocketException)
             {
                 Logger.Log($"Tried sending udp message to {AnnounceURI.DnsSafeHost}, sockException occured.");
                 Logger.Log($"Trying fixed host option...");
@@ -45,20 +52,45 @@ namespace ArchTorrent.Core.Trackers
             await sock.ConnectAsync(ipAddr, port);
 
             // this should be in its own function
-            UDPTrackerProtocol.ConnectRequest req = new UDPTrackerProtocol.ConnectRequest();
+            ConnectRequest connectReq = new ConnectRequest();
 
             { 
-                int BytesSent = await sock.SendAsync(req.GetBytes(), SocketFlags.None, CancellationToken);
+                int BytesSent = await sock.SendAsync(connectReq.GetBytes(), SocketFlags.None, CancellationToken);
 
-                if(BytesSent != 16)
+                if(BytesSent != ConnectRequest.BYTE_COUNT)
                 {
-                    throw new Exception("Invalid request sent from client");
+                    throw new Exception("Invalid connect request sent from client");
                 }
             }
 
             byte[] responseBuffer = new byte[16];
             await sock.ReceiveAsync(responseBuffer, SocketFlags.None, CancellationToken);
-            UDPTrackerProtocol.ConnectResponse connectResponse = UDPTrackerProtocol.ConnectResponse.Parse(responseBuffer);
+            ConnectResponse connectRes = ConnectResponse.Parse(responseBuffer);
+
+            if (!connectReq.CheckResponse(connectRes)) throw new Exception("Invalid data returned");
+
+            AnnounceRequest announceReq = new AnnounceRequest(connectRes.connection_id, Torrent);
+
+            {
+                int bytesSent = await sock.SendAsync(announceReq.Serialize(), SocketFlags.None, CancellationToken);
+
+                if(bytesSent != AnnounceRequest.BYTE_COUNT)
+                {
+                    throw new Exception("Invalid announce request sent from client");
+                }
+            }
+
+            responseBuffer = new byte[1024];
+            int bytesRes = await sock.ReceiveAsync(responseBuffer, SocketFlags.None, CancellationToken);
+
+            if(bytesRes < 20)
+            {
+                throw new Exception("Bad data recieved from announce request");
+            }
+
+            AnnounceResponse announceResponse = new AnnounceResponse(responseBuffer.Take(bytesRes).ToArray());
+
+            Peers = announceResponse.peers;
         }
 
         /// <summary>

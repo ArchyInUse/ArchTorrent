@@ -25,7 +25,7 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
         Int32 seeders;
 
         // these directly correspond to each other
-        List<IpPortPair> peers;
+        public List<Peer> peers;
 
         public AnnounceResponse(byte[] source)
         {
@@ -34,7 +34,7 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
             interval = BitConverter.ToInt32(source.ReadBytes(8, 4));
             leechers = BitConverter.ToInt32(source.ReadBytes(12, 4));
             seeders = BitConverter.ToInt32(source.ReadBytes(16, 4));
-            peers = new List<IpPortPair>();
+            peers = new List<Peer>();
 
             // begin at byte 20 to end, so the amount of ip pairs
             int ipAmount = (source.Length - 20) / 6;
@@ -44,20 +44,9 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
 
                 var ip = bytes.ReadBytes(0, 4);
                 var port = bytes.ReadBytes(4, 2);
-                IpPortPair pair = new(BitConverter.ToInt32(ip), BitConverter.ToInt16(port));
+                Peer pair = new(BitConverter.ToInt32(ip), BitConverter.ToInt16(port));
                 peers.Add(pair);
             }
-        }
-    }
-
-    public struct IpPortPair
-    {
-        Int32 ip;
-        Int16 port;
-        public IpPortPair(Int32 i, Int16 p)
-        {
-            ip = i;
-            port = p;
         }
     }
 }

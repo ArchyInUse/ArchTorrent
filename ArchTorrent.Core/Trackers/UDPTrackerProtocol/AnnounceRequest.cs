@@ -37,6 +37,8 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
 
         public Int16 port;
 
+        public const int BYTE_COUNT = 98;
+
         public AnnounceRequest(Int64 connectionId, Torrents.Torrent torrent)
         {
             connection_id = connectionId;
@@ -76,7 +78,26 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
                     left += file.Length;
                 }
             }
+        }
 
+        public byte[] Serialize()
+        {
+            // 98 byte message
+            byte[] ret = new byte[BYTE_COUNT];
+            Array.Copy(BitConverter.GetBytes(connection_id), ret, 8);
+            Array.Copy(BitConverter.GetBytes(action), 0, ret, 8, 4);
+            Array.Copy(BitConverter.GetBytes(transaction_id), 0, ret, 12, 4);
+            Array.Copy(info_hash, 0, ret, 16, 20);
+            Array.Copy(peer_id, 0, ret, 36, 20);
+            Array.Copy(BitConverter.GetBytes(downloaded), 0, ret, 56, 8);
+            Array.Copy(BitConverter.GetBytes(left), 0, ret, 64, 8);
+            Array.Copy(BitConverter.GetBytes(uploaded), 0, ret, 72, 8);
+            Array.Copy(BitConverter.GetBytes(_event), 0, ret, 80, 4);
+            Array.Copy(BitConverter.GetBytes(ip_address), 0, ret, 84, 4);
+            Array.Copy(BitConverter.GetBytes(key), 0, ret, 88, 4);
+            Array.Copy(BitConverter.GetBytes(num_want), 0, ret, 92, 4);
+            Array.Copy(BitConverter.GetBytes(port), 0, ret, 96, 2);
+            return ret;
         }
     }
 }
