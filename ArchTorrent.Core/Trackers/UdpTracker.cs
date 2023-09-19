@@ -58,6 +58,7 @@ namespace ArchTorrent.Core.Trackers
 
             byte[] responseBuffer = new byte[16];
             await sock.ReceiveAsync(responseBuffer, SocketFlags.None, CancellationToken);
+            UDPTrackerProtocol.ConnectResponse connectResponse = UDPTrackerProtocol.ConnectResponse.Parse(responseBuffer);
         }
 
         /// <summary>

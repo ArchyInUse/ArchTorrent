@@ -9,11 +9,27 @@ namespace ArchTorrent.Core
 {
     public static partial class Logger
     {
-        public static void Log(string message, LogLevel severity = 0)
+        public static string Log(string message, LogLevel severity = 0)
         {
             // currently not using the LogLevel system, but important to have a place to implement it
             // should it be needed.
-            Debug.WriteLine($"[{DateTime.Now}] " + message);
+            string m = $"[{DateTime.Now}] " + message;
+            AddToFile(m);
+            Debug.WriteLine(m);
+            return m;
+        }
+
+        private static bool AddToFile(string message, LogLevel severity = 0)
+        {
+            try
+            {
+                File.AppendAllText("log.txt", message);
+            }
+            catch(Exception)
+            {
+                return false;
+            }
+            return true;
         }
     }
 }
