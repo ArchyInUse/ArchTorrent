@@ -39,8 +39,11 @@ namespace ArchTorrent.Core.Torrents
         [JsonProperty]
         public bool SingleFile { get; private set; } = false;
 
+        public BDictionary OriginalDictionary { get; private set; }
+
         public TorrentInfo(BDictionary infoDict)
         {
+            OriginalDictionary = infoDict;
             // single file mode
             if (infoDict.Get<BList>("files") == null)
             {

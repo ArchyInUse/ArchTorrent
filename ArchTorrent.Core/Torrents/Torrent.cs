@@ -49,7 +49,6 @@ namespace ArchTorrent.Core.Torrents
         private Torrent(string fullPath)
         {
             FullFilePath = fullPath;
-
         }
 
         // TODO: implement
