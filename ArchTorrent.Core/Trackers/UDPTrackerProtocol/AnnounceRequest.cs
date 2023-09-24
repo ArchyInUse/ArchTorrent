@@ -9,33 +9,33 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
 {
     public struct AnnounceRequest
     {
-        public Int64 connection_id;
+        public readonly Int64 connection_id;
 
         // 1 = announce
-        public Int32 action = 1;
+        public readonly Int32 action = 1;
 
-        public Int32 transaction_id;
-
-        // byte[20] (string)
-        public byte[] info_hash;
+        public readonly Int32 transaction_id;
 
         // byte[20] (string)
-        public byte[] peer_id = new byte[20];
+        public readonly byte[] info_hash;
 
-        public Int64 downloaded;
-        public Int64 left;
-        public Int64 uploaded;
+        // byte[20] (string)
+        public readonly byte[] peer_id = new byte[20];
+
+        public readonly Int64 downloaded;
+        public readonly Int64 left;
+        public readonly Int64 uploaded;
 
         /// <summary>
         /// 0: none; 1: completed; 2: started; 3: stopped
         /// </summary>
-        public Int32 _event; // _ to avoid name collision with keyword `event`
+        public readonly Int32 _event; // _ to avoid name collision with keyword `event`
 
-        public Int32 ip_address; // 0 = default
-        public Int32 key; // random
-        public Int32 num_want; // -1 default
+        public readonly Int32 ip_address; // 0 = default
+        public readonly Int32 key; // random
+        public readonly Int32 num_want; // -1 default
 
-        public Int16 port;
+        public readonly Int16 port;
 
         public const int BYTE_COUNT = 98;
 

@@ -18,11 +18,11 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
         // 24 + 6 * n  16-bit integer  TCP port
         // 20 + 6 * N
         // Note: for IP & TCP ports, we'll group them up as they are related and read them together in IpPortPair
-        Int32 action;
-        Int32 transaction_id;
-        Int32 interval;
-        Int32 leechers;
-        Int32 seeders;
+        public readonly Int32 action;
+        public readonly Int32 transaction_id;
+        public readonly Int32 interval;
+        public readonly Int32 leechers;
+        public readonly Int32 seeders;
 
         // these directly correspond to each other
         public List<Peer> peers;

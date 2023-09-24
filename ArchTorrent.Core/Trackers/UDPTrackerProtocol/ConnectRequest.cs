@@ -9,19 +9,19 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
 {
     public struct ConnectRequest
     {
-        public Int64 protocol_id = 0x41727101980;
+        public readonly Int64 protocol_id = 0x41727101980;
 
         // 0 = connect
-        public Int32 action = 0;
+        public readonly Int32 action = 0;
 
-        public Int32 transaction_id;
+        public readonly Int32 transaction_id;
 
         public const int BYTE_COUNT = 16;
 
         public ConnectRequest()
         {
             // random 32-bit integer
-            Random r = new Random();
+            Random r = new();
             transaction_id = r.Next(Int32.MinValue, Int32.MaxValue);
         }
 
@@ -35,13 +35,16 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
             action = new byte[] { 0, 0, 0, 0 };
             
             bytes = protocolId.Concat(action.Concat(transactionId)).ToArray();
-            string s = "";
-            for(int i = 0; i < bytes.Length; i++)
-            {
-                s += bytes[i].ToString("X2");
-            }
-            Logger.Log($"Sending: {s}", source: "Serialize Connection Request");
-            if (bytes.Length > 16) throw new Exception("Wrong length");
+            
+            // debug data sent:
+            // string s = "";
+            // for(int i = 0; i < bytes.Length; i++)
+            // {
+            //     s += bytes[i].ToString("X2");
+            // }
+            // Logger.Log($"Sending: {s}", source: "Serialize Connection Request");
+
+            if (bytes.Length > 16) throw new Exception("Invalid Connection Response length (bytes.Length > 16)");
 
             return bytes;
         }
