@@ -86,7 +86,8 @@ namespace ArchTorrent.Core.Torrents
             // torrent is not single file
             PieceLength = infoDict.Get<BInteger>("piece length").Value;
             Pieces = infoDict.Get<BString>("pieces").Value.ToArray();
-            if (infoDict.Get<BInteger>("private").Value != 0) Private = true;
+            var priv = infoDict.Get<BInteger>("private");
+            if (priv != null && priv.Value != 0) Private = true;
 
         }
     }

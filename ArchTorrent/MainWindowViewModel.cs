@@ -15,6 +15,7 @@ using System.Collections.ObjectModel;
 using ArchTorrent.Core.Torrents;
 using Newtonsoft.Json;
 using System.Net;
+using ArchTorrent.Core.Trackers;
 
 namespace ArchTorrent
 {
@@ -46,11 +47,17 @@ namespace ArchTorrent
             Torrent torrent = Torrent.BCNetDictToATTorrent(tmp, TorrentPaths[0]);
             Logger.Log("Completed Construction, outputting to file test.txt");
 
-            using (StreamWriter sw = new StreamWriter("test.txt"))
-            {
-                string asStr = JsonConvert.SerializeObject(torrent);
-                sw.Write(asStr);
-            }
+            torrent.GetPeers().Wait();
+
+            //using (StreamWriter sw = new StreamWriter("test.txt"))
+            //{
+            //    string asStr = JsonConvert.SerializeObject(torrent);
+            //    sw.Write(asStr);
+            //}
+
+
+
+
             //string str = "8:announce";
             //string integer = "i52481e";
             //Logger.Log(BencodeObject.DecodeString(str).ToString());
@@ -72,7 +79,6 @@ namespace ArchTorrent
                 var bencodeReader = new BencodeNET.IO.BencodeReader(fs);
                 var parser = new BCParsing.BencodeParser();
 
-                // TODO: CRASHES!
                 ret = parser.Parse<BCObjects.BDictionary>(bencodeReader);
             }
             return ret;

@@ -15,15 +15,18 @@ namespace ArchTorrent.Core.Trackers
     public class UdpTracker : Tracker
     {
         public string AnnounceUrl { get; set; }
-        public Uri AnnounceURI { get => new Uri(AnnounceUrl, UriKind.Absolute); }
+        public Uri AnnounceURI { get; set; }
         public Torrent Torrent { get; set; }
+
+        public const int LISTENPORT = 6881;
 
         public List<Peer> Peers { get; set; } = new List<Peer>();
 
-        public UdpTracker(Torrent torrent)
+        public UdpTracker(Torrent torrent, string announceUrl)
         {
             Torrent = torrent;
-            AnnounceUrl = torrent.AnnounceURL;
+            AnnounceUrl = announceUrl;
+            AnnounceURI = new Uri(announceUrl);
             CancelTokenSrc = new CancellationTokenSource();
             CancellationToken = CancelTokenSrc.Token;
         }
@@ -31,66 +34,130 @@ namespace ArchTorrent.Core.Trackers
         public CancellationToken CancellationToken { get; set; }
         private CancellationTokenSource CancelTokenSrc { get; set; }
 
-        public async Task GetPeers()
+        /// <summary>
+        /// returns an empty list (check result.Count == 0)
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        /// <exception cref="InvalidDataException"></exception>
+        public async Task<List<Peer>> TryGetPeers()
         {
-            Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            IPHostEntry hostInfo;
-            try
-            {
-                hostInfo = Dns.GetHostEntry(AnnounceURI.DnsSafeHost);
-            }
-            catch (SocketException)
-            {
-                Logger.Log($"Tried sending udp message to {AnnounceURI.DnsSafeHost}, sockException occured.");
-                Logger.Log($"Trying fixed host option...");
-                hostInfo = Dns.GetHostEntry(GetFixedHost(AnnounceURI.DnsSafeHost));
-            }
-            IPAddress ipAddr = hostInfo.AddressList[0];
-            int port = AnnounceURI.Port;
+            List<Peer> defaultRet = new();
+            Logger.Log("Begin GetPeers", source: "UdpTracker");
 
             // connect to host
-            await sock.ConnectAsync(ipAddr, port);
-
+            Logger.Log($"Connecting to host {AnnounceURI}, host {AnnounceURI.DnsSafeHost}", source: "UdpTracker");
+            
             // this should be in its own function
             ConnectRequest connectReq = new ConnectRequest();
 
-            { 
-                int BytesSent = await sock.SendAsync(connectReq.GetBytes(), SocketFlags.None, CancellationToken);
+            Logger.Log($"Sending connect request", source: "UdpTracker");
+            byte[]? conResData = await ExecuteUdpRequest(AnnounceURI, connectReq.Serialize());
 
-                if(BytesSent != ConnectRequest.BYTE_COUNT)
-                {
-                    throw new Exception("Invalid connect request sent from client");
-                }
+            //if (conResData == null) throw new InvalidDataException("Bytes not recieved from UDP request (connection request)");
+            //if (conResData.Length < 15) throw new InvalidDataException($"Invalid amount of data recieved, expected: 16; got: {conResData.Length}");
+            if (conResData == null)
+            {
+                Logger.Log($"Bytes not recieved from UDP request (connection request)");
+                return defaultRet;
+            }
+            else if (conResData.Length < 15)
+            {
+                Logger.Log($"Invalid amount of data recieved, expected: 16; got: { conResData.Length }");
+                return defaultRet;
             }
 
-            byte[] responseBuffer = new byte[16];
-            await sock.ReceiveAsync(responseBuffer, SocketFlags.None, CancellationToken);
-            ConnectResponse connectRes = ConnectResponse.Parse(responseBuffer);
+            Logger.Log($"Recieved connection response! parsing 16 bytes...", source: "UdpTracker");
+            ConnectResponse connectRes = ConnectResponse.Parse(conResData);
 
-            if (!connectReq.CheckResponse(connectRes)) throw new Exception("Invalid data returned");
+            if (!connectReq.CheckResponse(connectRes))
+            {
+                Logger.Log($"Invalid data returned");
+                return defaultRet;
+            }
+            Logger.Log($"Recieved response and parsed correctly", source: "UdpTracker");
 
             AnnounceRequest announceReq = new AnnounceRequest(connectRes.connection_id, Torrent);
+            Logger.Log("Built announce request, sending...");
 
+            conResData = await ExecuteUdpRequest(AnnounceURI, announceReq.Serialize());
+
+            // if (conResData == null) throw new InvalidDataException($"Bytes not recieved from UDP request (announce request)");
+            if (conResData == null)
             {
-                int bytesSent = await sock.SendAsync(announceReq.Serialize(), SocketFlags.None, CancellationToken);
+                Logger.Log($"Bytes not recieved from UDP request (announce request)");
+                return defaultRet;
+            }
 
-                if(bytesSent != AnnounceRequest.BYTE_COUNT)
+            Logger.Log($"Sent announce request... parsing bytes", source: "UdpTracker");
+
+            if (conResData.Length < 20)
+            {
+                Logger.Log("Bad data recieved from announce request");
+                return defaultRet;
+            }
+
+            AnnounceResponse announceResponse = new AnnounceResponse(conResData);
+
+            Logger.Log($"Recieved bytes correctly, byte length: {conResData.Length}", source: "UdpTracker");
+            Peers = announceResponse.peers;
+
+            Peers.ForEach(peer => Logger.Log($"PEER: {peer}", source: "TryGetPeers"));
+
+            return announceResponse.peers;
+        }
+
+        /// <summary>
+        /// Executes a udp request with a given uri and data
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <param name="message"></param>
+        /// <returns>returns a byte array or null on failure or timeout.</returns>
+        /// <exception cref="ArgumentNullException">if uri or message is null an ArgumentNull exception will be raised</exception>
+        private async Task<byte[]?> ExecuteUdpRequest(Uri uri, byte[] message)
+        {
+            if (uri == null) throw new ArgumentNullException(nameof(uri));
+            if (message == null) throw new ArgumentNullException(nameof(message));
+
+            byte[]? data = null;
+            IPEndPoint any = new(IPAddress.Any, LISTENPORT);
+
+            try
+            {
+                using (UdpClient udpClient = new UdpClient())
                 {
-                    throw new Exception("Invalid announce request sent from client");
+                    udpClient.Client.SendTimeout = (int)TimeSpan.FromSeconds(5).TotalMilliseconds;
+                    udpClient.Client.ReceiveTimeout = (int)TimeSpan.FromSeconds(15).TotalMilliseconds;
+
+                    Logger.Log($"sending message to {uri.Host}, returning.", source: "UdpRequest");
+
+                    int numBytesSent = await udpClient.SendAsync(message, message.Length, uri.Host, uri.Port);
+                    Logger.Log($"Sent: {numBytesSent}", source: "UdpRequest");
+
+                    var res = udpClient.BeginReceive(null, null);
+                    //data = udpClient.EndReceive(res, ref any);
+                    // begin recieve right after request
+                    if (res.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(15)))
+                    {
+                        Logger.Log($"Recieved message from endpoint, returning.", source: "UdpRequest");
+
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+                        data = udpClient.EndReceive(res, ref any);
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+                    }
+                    else
+                    {
+                        Logger.Log($"No Bytes Recieved from UdpRequest", source: "UdpRequest");
+                        // here the client just times out.
+                    }
                 }
             }
-
-            responseBuffer = new byte[1024];
-            int bytesRes = await sock.ReceiveAsync(responseBuffer, SocketFlags.None, CancellationToken);
-
-            if(bytesRes < 20)
+            catch(SocketException ex)
             {
-                throw new Exception("Bad data recieved from announce request");
+                Logger.Log($"Failed UDP tracker message to {uri} for torrent {Torrent.InfoHash}: {ex.Message}");
             }
 
-            AnnounceResponse announceResponse = new AnnounceResponse(responseBuffer.Take(bytesRes).ToArray());
-
-            Peers = announceResponse.peers;
+            return data;
         }
 
         /// <summary>

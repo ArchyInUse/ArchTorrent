@@ -9,11 +9,12 @@ namespace ArchTorrent.Core
 {
     public static partial class Logger
     {
-        public static string Log(string message, LogLevel severity = 0)
+        private static List<string> sources = new List<string>(new string[] {"UdpTracker"});
+        public static string Log(string message, LogLevel severity = 0, string source = "main")
         {
             // currently not using the LogLevel system, but important to have a place to implement it
             // should it be needed.
-            string m = $"[{DateTime.Now}] " + message;
+            string m = $"[{DateTime.Now}] [{source}] " + message;
             AddToFile(m);
             Debug.WriteLine(m);
             return m;

@@ -84,19 +84,19 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
         {
             // 98 byte message
             byte[] ret = new byte[BYTE_COUNT];
-            Array.Copy(BitConverter.GetBytes(connection_id), ret, 8);
-            Array.Copy(BitConverter.GetBytes(action), 0, ret, 8, 4);
-            Array.Copy(BitConverter.GetBytes(transaction_id), 0, ret, 12, 4);
+            Array.Copy(connection_id.EncodeInteger(), ret, 8);
+            Array.Copy(action.EncodeInteger(), 0, ret, 8, 4);
+            Array.Copy(transaction_id.EncodeInteger(), 0, ret, 12, 4);
             Array.Copy(info_hash, 0, ret, 16, 20);
             Array.Copy(peer_id, 0, ret, 36, 20);
-            Array.Copy(BitConverter.GetBytes(downloaded), 0, ret, 56, 8);
-            Array.Copy(BitConverter.GetBytes(left), 0, ret, 64, 8);
-            Array.Copy(BitConverter.GetBytes(uploaded), 0, ret, 72, 8);
-            Array.Copy(BitConverter.GetBytes(_event), 0, ret, 80, 4);
-            Array.Copy(BitConverter.GetBytes(ip_address), 0, ret, 84, 4);
-            Array.Copy(BitConverter.GetBytes(key), 0, ret, 88, 4);
-            Array.Copy(BitConverter.GetBytes(num_want), 0, ret, 92, 4);
-            Array.Copy(BitConverter.GetBytes(port), 0, ret, 96, 2);
+            Array.Copy(downloaded.EncodeInteger(), 0, ret, 56, 8);
+            Array.Copy(left.EncodeInteger(), 0, ret, 64, 8);
+            Array.Copy(uploaded.EncodeInteger(), 0, ret, 72, 8);
+            Array.Copy(_event.EncodeInteger(), 0, ret, 80, 4);
+            Array.Copy(ip_address.EncodeInteger(), 0, ret, 84, 4);
+            Array.Copy(key.EncodeInteger(), 0, ret, 88, 4);
+            Array.Copy(num_want.EncodeInteger(), 0, ret, 92, 4);
+            Array.Copy(port.EncodeInteger(), 0, ret, 96, 2);
             return ret;
         }
     }

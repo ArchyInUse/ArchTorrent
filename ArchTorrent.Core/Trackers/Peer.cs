@@ -17,5 +17,10 @@ namespace ArchTorrent.Core.Trackers
             Ip = new IPAddress(ip);
             Port = port;
         }
+
+        public override string ToString()
+        {
+            return $"Peer: {Ip}:{Port}";
+        }
     }
 }

@@ -29,11 +29,11 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
 
         public AnnounceResponse(byte[] source)
         {
-            action = BitConverter.ToInt32(source.ReadBytes(0, 4));
-            transaction_id = BitConverter.ToInt32(source.ReadBytes(4, 4));
-            interval = BitConverter.ToInt32(source.ReadBytes(8, 4));
-            leechers = BitConverter.ToInt32(source.ReadBytes(12, 4));
-            seeders = BitConverter.ToInt32(source.ReadBytes(16, 4));
+            action = source.ReadBytes(0, 4).DecodeInt32();
+            transaction_id = source.ReadBytes(4, 4).DecodeInt32();
+            interval = source.ReadBytes(8, 4).DecodeInt32();
+            leechers = source.ReadBytes(12, 4).DecodeInt32();
+            seeders = source.ReadBytes(16, 4).DecodeInt32();
             peers = new List<Peer>();
 
             // begin at byte 20 to end, so the amount of ip pairs
@@ -44,7 +44,7 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
 
                 var ip = bytes.ReadBytes(0, 4);
                 var port = bytes.ReadBytes(4, 2);
-                Peer pair = new(BitConverter.ToInt32(ip), BitConverter.ToInt16(port));
+                Peer pair = new(ip.DecodeInt32(), port.DecodeInt16());
                 peers.Add(pair);
             }
         }

@@ -8,6 +8,8 @@ using BString = BencodeNET.Objects.BString;
 using BList = BencodeNET.Objects.BList;
 using BInteger = BencodeNET.Objects.BNumber;
 using Newtonsoft.Json;
+using BencodeNET.Torrents;
+using ArchTorrent.Core.Trackers;
 
 namespace ArchTorrent.Core.Torrents
 {
@@ -25,6 +27,9 @@ namespace ArchTorrent.Core.Torrents
         [JsonProperty]
         public string AnnounceURL { get; set; }
 
+        // TODO: change this so it can be both UDP & HTTP
+        [JsonProperty]
+        public List<UdpTracker> Trackers { get; set; } = new List<UdpTracker>();
 
         #endregion
 
@@ -42,13 +47,47 @@ namespace ArchTorrent.Core.Torrents
         public string Encoding { get; set; } = "";
         #endregion
 
+        public string InfoHash { get => TorrentUtil.CalculateInfoHash(Info.OriginalDictionary); }
+
         /// <summary>
         /// creates a Torrent skeleton until .Read() is called
         /// </summary>
         /// <param name="fullPath">full path to the torrent</param>
-        private Torrent(string fullPath)
+        private Torrent(string fullPath, IEnumerable<string> announces)
         {
             FullFilePath = fullPath;
+            foreach(string announce in announces)
+            {
+                Trackers.Add(new UdpTracker(this, announce));
+            }
+        }
+
+        public async Task<bool> GetPeers()
+        {
+            if (Trackers.Count == 0) return false;
+
+            var tasks = new List<Task<List<Peer>>>();
+            
+            for(int i = 0; i < Trackers.Count - 1; i++)
+            {
+                tasks.Add(Trackers[i].TryGetPeers());
+                
+            }
+
+            var b = await Task.WhenAll(tasks);
+            List<UdpTracker> toDel = new List<UdpTracker>();
+
+            foreach(var tracker in Trackers)
+            {
+                if (tracker.Peers.Count == 0) toDel.Add(tracker);
+            }
+            Logger.Log($"Removing all elements that did not respond to the tracker requests ({toDel.Count} out of {Trackers.Count}). Remaining: {toDel.Count - Trackers.Count}");
+            toDel.ForEach(x => Trackers.Remove(x));
+
+            var a = new List<List<Peer>>(b);
+            a.ForEach(x => x.ForEach(y => Logger.Log($"PEER: {y}")));
+
+            return Trackers.Count > 0;
         }
 
         // TODO: implement
@@ -57,6 +96,26 @@ namespace ArchTorrent.Core.Torrents
             // mandatory
             BDictionary info = dict.Get<BDictionary>("info");
             string announceURL = dict.Get<BString>("announce").ToString();
+            BList? announceList = dict.Get<BList>("announce-list");
+
+            List<string> announces = new List<string>();
+            announces.Add(announceURL);
+            if(announceList != null)
+            {
+                foreach(var t in announceList)
+                {
+                    BList? announce = t as BList;
+                    if (announce == null) continue;
+
+                    foreach(var bstr in announce)
+                    {
+                        BString? aStr = bstr as BString;
+                        if (aStr == null) continue;
+                        Logger.Log($"Adding URL: {aStr}", source: "--Initialize Torrent---");
+                        announces.Add(aStr.ToString());
+                    }
+                }
+            }
 
             // optional fields
             // announceList : list<list<string>>
@@ -76,7 +135,7 @@ namespace ArchTorrent.Core.Torrents
             string encoding = string.Empty;
             if (bEncoding != null) encoding = bEncoding.ToString();
 
-            Torrent ret = new Torrent(filePath);
+            Torrent ret = new Torrent(filePath, announces);
             TorrentInfo torrentInfo = new TorrentInfo(info);
             ret.Info = torrentInfo;
             ret.AnnounceURL = announceURL; 
