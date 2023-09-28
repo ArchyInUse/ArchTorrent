@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,12 +24,13 @@ namespace ArchTorrent.Models
 
         public Torrent Torrent { get; set; }
 
-        public long Downloaded { get; set; }
+        public long DownloadedValue { get; set; }
         public long TotalSize { get => Torrent.Info.Size; }
 
         public TorrentModel(Torrent torrent)
         {
             Torrent = torrent;
+            
         }
     }
 }
