@@ -5,8 +5,66 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ArchTorrent"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="800"
+        Background="#272829">
+    <Window.Resources>
+        <!-- TODO: make these interchangable -->
+        <SolidColorBrush x:Key="Panel" Color="#61677A" />
+        <SolidColorBrush x:Key="Lighter" Color="#D8D9DA" />
+        <SolidColorBrush x:Key="Lightest" Color="#FFF6E0" />
+        <SolidColorBrush x:Key="Background" Color="#272829" />
+    </Window.Resources>
     <Grid>
-        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="4.5*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="3*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="0.25*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Torrent Grid -->
+        <Grid Grid.Row="0" Grid.Column="1"
+              Background="{StaticResource Background}">
+            <!-- Legend -->
+
+            <ListView ItemsSource="{Binding Source=Torrents}"
+                      Background="{StaticResource Background}">
+                <ListView.View>
+                    <GridView AllowsColumnReorder="True" ColumnHeaderToolTip="Torrents">
+                        
+                        <GridViewColumn DisplayMemberBinding="{Binding Info.DirectoryName}"
+                                        Header="Name">
+                            
+                        </GridViewColumn>
+
+                        <GridViewColumn DisplayMemberBinding="{Binding Info.Size}"
+                                        Header="Size">
+                        </GridViewColumn>
+
+                        <GridViewColumn DisplayMemberBinding="{Binding Info.Downloaded}"
+                                        Header="Size">
+                        </GridViewColumn>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </Grid>
+
+        <TreeView Grid.Row="0"
+                  Grid.Column="0"
+                  Background="#61677A"
+                  >
+            
+        </TreeView>
+
+        <TabControl Grid.Row="1" Grid.ColumnSpan="2">
+            <TabItem Header="Status">
+                <Label Content="Content goes here..." />
+            </TabItem>
+            <TabItem Header="Security" />
+            <TabItem Header="Details" />
+        </TabControl>
     </Grid>
 </Window>

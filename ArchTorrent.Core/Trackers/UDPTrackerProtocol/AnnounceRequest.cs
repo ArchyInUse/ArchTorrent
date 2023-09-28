@@ -52,10 +52,7 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
             transaction_id = r.Next(Int32.MinValue, Int32.MaxValue);
 
             r.NextBytes(peer_id);
-            var ATVerBytes = Encoding.ASCII.GetBytes(TrackerUtils.ATVERSION);
-
-            // copy -AT0001- to the start of the array.
-            Array.Copy(ATVerBytes, peer_id, ATVerBytes.Length);
+            peer_id = TrackerMessageHelpers.GenerateID();
 
             downloaded = 0;
             uploaded = 0;

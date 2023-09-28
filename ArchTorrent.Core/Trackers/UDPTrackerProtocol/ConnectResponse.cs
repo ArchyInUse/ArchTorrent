@@ -14,6 +14,7 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
             action = resp.ReadBytes(0, 4).DecodeInt32();
             transaction_id = resp.ReadBytes(4, 4).DecodeInt32();
             connection_id = resp.ReadBytes(8, 8).DecodeInt64();
+            Logger.Log($"Logging response headers (action:4, t_id: 4, c_id: 8: {resp.HexToString()}", source: "Connect Response Constructor");
         }
     }
 

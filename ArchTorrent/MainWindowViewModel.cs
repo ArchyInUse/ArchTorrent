@@ -48,6 +48,7 @@ namespace ArchTorrent
             Logger.Log("Completed Construction, outputting to file test.txt");
 
             torrent.GetPeers().Wait();
+            Torrents.Add(torrent);
 
             //using (StreamWriter sw = new StreamWriter("test.txt"))
             //{

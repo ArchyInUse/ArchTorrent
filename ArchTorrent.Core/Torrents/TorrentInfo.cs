@@ -27,6 +27,14 @@ namespace ArchTorrent.Core.Torrents
         [JsonProperty]
         public List<TorrentFile> Files { get; private set; } = new List<TorrentFile>();
 
+        [JsonProperty]
+        public long Size { get
+            {
+                long i = 0;
+                Files.ForEach(f => i += f.Length);
+                return i;
+            } }
+
         #endregion
 
         #region Optional

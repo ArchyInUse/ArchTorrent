@@ -10,6 +10,8 @@ using BInteger = BencodeNET.Objects.BNumber;
 using Newtonsoft.Json;
 using BencodeNET.Torrents;
 using ArchTorrent.Core.Trackers;
+using System.Net;
+using System.ComponentModel;
 
 namespace ArchTorrent.Core.Torrents
 {
@@ -18,6 +20,8 @@ namespace ArchTorrent.Core.Torrents
     {
         [JsonProperty]
         public string FullFilePath { get; set; }
+
+        internal static PortList PortList = new PortList();
 
         #region Mandatory Fields
 
@@ -62,6 +66,8 @@ namespace ArchTorrent.Core.Torrents
             }
         }
 
+        // TODO: RecieveAsync hangs, therefor this cannot be fully asynchronous you have to wait for AsyncResult.WaitOne
+        // some change needs to be done to ExecuteUdpRequest for it to work 
         public async Task<bool> GetPeers()
         {
             if (Trackers.Count == 0) return false;
@@ -71,11 +77,12 @@ namespace ArchTorrent.Core.Torrents
             for(int i = 0; i < Trackers.Count - 1; i++)
             {
                 tasks.Add(Trackers[i].TryGetPeers());
-                
+                //tasks.Add(Task.Run(() => Trackers[i].TryGetPeers()));
             }
-
+            Logger.Log($"Amount of tasks: {tasks.Count}");
             var b = await Task.WhenAll(tasks);
-            List<UdpTracker> toDel = new List<UdpTracker>();
+            Logger.Log($"Completed all {tasks.Count} tasks!");
+            List<UdpTracker> toDel = new();
 
             foreach(var tracker in Trackers)
             {
@@ -111,7 +118,8 @@ namespace ArchTorrent.Core.Torrents
                     {
                         BString? aStr = bstr as BString;
                         if (aStr == null) continue;
-                        Logger.Log($"Adding URL: {aStr}", source: "--Initialize Torrent---");
+                        if (!aStr.ToString().StartsWith("udp")) continue;
+                        Logger.Log($"Adding URL: {aStr}", source: "---Initialize Torrent---");
                         announces.Add(aStr.ToString());
                     }
                 }

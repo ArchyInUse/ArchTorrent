@@ -12,7 +12,7 @@ namespace ArchTorrent.Core.Trackers
         public IPAddress Ip { get; set; }
         public int Port { get; set; }
 
-        public Peer(Int32 ip, Int16 port)
+        public Peer(byte[] ip, Int16 port)
         {
             Ip = new IPAddress(ip);
             Port = port;

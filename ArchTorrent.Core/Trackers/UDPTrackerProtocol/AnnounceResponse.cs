@@ -38,13 +38,15 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
 
             // begin at byte 20 to end, so the amount of ip pairs
             int ipAmount = (source.Length - 20) / 6;
+            Logger.Log($"Logging Announce response after headers (byte 20 to byte {source.Length}: {source.ReadBytes(20, source.Length - 21).HexToString()}");
             for (int i = 0; i < ipAmount; i++)
             {
                 byte[] bytes = source.ReadBytes(20 + (6 * i), 6);
 
                 var ip = bytes.ReadBytes(0, 4);
-                var port = bytes.ReadBytes(4, 2);
-                Peer pair = new(ip.DecodeInt32(), port.DecodeInt16());
+                var port = bytes.ReadBytes(4, 2).DecodeInt16();
+                Peer pair = new(ip, port);
+                if (pair.Port < 0) continue;
                 peers.Add(pair);
             }
         }
