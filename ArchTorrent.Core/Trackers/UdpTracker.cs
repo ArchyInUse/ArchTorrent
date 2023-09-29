@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using ArchTorrent.Core.PeerProtocol;
 using ArchTorrent.Core.Torrents;
 using ArchTorrent.Core.Trackers.UDPTrackerProtocol;
 using BencodeNET.Parsing;

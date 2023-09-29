@@ -12,6 +12,7 @@ using BencodeNET.Torrents;
 using ArchTorrent.Core.Trackers;
 using System.Net;
 using System.ComponentModel;
+using ArchTorrent.Core.PeerProtocol;
 
 namespace ArchTorrent.Core.Torrents
 {
