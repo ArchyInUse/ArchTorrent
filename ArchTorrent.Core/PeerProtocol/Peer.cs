@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using ArchTorrent.Core.Torrents;
 using ArchTorrent.Core.Trackers;
 
 namespace ArchTorrent.Core.PeerProtocol
@@ -13,13 +14,18 @@ namespace ArchTorrent.Core.PeerProtocol
     {
         public IPAddress Ip { get; set; }
         public int Port { get; set; }
-        public TcpClient Client { get; set; }
+        public Socket Sock { get; set; }
+        public string InfoHash { get; set; }
 
-        public Peer(byte[] ip, Int16 port)
+        // 32kb buffer
+        private byte[] buffer = new byte[1024 * 32];
+
+        public Peer(byte[] ip, Int16 port, string infoHash)
         {
             Ip = new IPAddress(ip);
             Port = port;
-            Client = new TcpClient();
+            Sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            InfoHash = infoHash;
         }
 
         public override string ToString()
@@ -27,14 +33,21 @@ namespace ArchTorrent.Core.PeerProtocol
             return $"Peer: {Ip}:{Port}";
         }
 
-        public async Task InitDownloadAsync()
+        public async Task InitDownloadAsync(CancellationToken cts)
         {
             // choke / unchoke -> peer does not want / does want to give a piece
             // interested / uninterested -> we want / do not want a piece
             // 1. handshake
             // 2. have / bitfield messages
-            await Client.ConnectAsync(new IPEndPoint(Ip, Port));
+            
+            await Sock.ConnectAsync(new IPEndPoint(Ip, Port));
+            if (await Sock.SendAsync(ConstructHandshake(), SocketFlags.None, cts) == 0)
+            {
+                Logger.Log($"Critical Error: could not send handshake message to {Ip}:{Port}!", source: "Peer Handshake");
+                return;
+            }
 
+            Logger.Log($"Handshake recieved correctly; starting download now", source: "Peer Handshake");
         }
 
         // handshake is very simple so no need for class
@@ -62,6 +75,9 @@ namespace ArchTorrent.Core.PeerProtocol
 
             // reserved
             for(int i = 0; i < 8; i++) { data.Add(0); }
+
+            var hash = Encoding.ASCII.GetBytes(InfoHash);
+            for(int i = 0; i < hash.Length; i++) { data.Add(hash[i]); }
 
             var peer_id = TrackerMessageHelpers.GenerateID();
             foreach(byte b in peer_id) { data.Add(b); }

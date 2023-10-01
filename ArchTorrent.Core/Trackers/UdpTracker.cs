@@ -98,7 +98,7 @@ namespace ArchTorrent.Core.Trackers
                 return defaultRet;
             }
 
-            AnnounceResponse announceResponse = new(conResData);
+            AnnounceResponse announceResponse = new(conResData, Torrent.InfoHash);
             Peers = announceResponse.peers;
 
             Peers.ForEach(peer => Logger.Log($"PEER: {peer}", source: "TryGetPeers"));
