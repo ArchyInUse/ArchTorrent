@@ -6,9 +6,12 @@ using System.Threading.Tasks;
 
 namespace ArchTorrent.Core.PeerProtocol
 {
-    public enum PeerMessageId
+    public enum PeerMessageId : byte
     {
-        KeepAlive = -1,
+        /// <summary>
+        /// KeepAlive does not have a payload or ID
+        /// </summary>
+        KeepAlive = 255,
         Choke = 0,
         Unchoke = 1,
         Interested = 2,
