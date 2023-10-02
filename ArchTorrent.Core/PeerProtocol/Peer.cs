@@ -33,7 +33,7 @@ namespace ArchTorrent.Core.PeerProtocol
             return $"Peer: {Ip}:{Port}";
         }
 
-        public async Task InitDownloadAsync(CancellationToken cts)
+        public async Task<bool> InitDownloadAsync(CancellationToken cts)
         {
             // choke / unchoke -> peer does not want / does want to give a piece
             // interested / uninterested -> we want / do not want a piece
@@ -44,10 +44,26 @@ namespace ArchTorrent.Core.PeerProtocol
             if (await Sock.SendAsync(ConstructHandshake(), SocketFlags.None, cts) == 0)
             {
                 Logger.Log($"Critical Error: could not send handshake message to {Ip}:{Port}!", source: "Peer Handshake");
-                return;
+                return false;
+            }
+            byte[] handshakeBuffer = new byte[1024];
+            int handshakeRecieved = await Sock.ReceiveAsync(handshakeBuffer, SocketFlags.None, cts);
+
+            Array.Resize(ref handshakeBuffer, handshakeRecieved);
+
+            var asStr = Encoding.ASCII.GetString(handshakeBuffer);
+            Logger.Log($"Handshake Response: {asStr}", source:"Peer Handshake");
+
+            // see if recieved the entire 
+            if(!(handshakeBuffer[0] + 49 == handshakeRecieved && Encoding.ASCII.GetString(handshakeBuffer.ReadBytes(1, handshakeBuffer[0])) == "BitTorrent protocol"))
+            {
+                Logger.Log($"Parsing went wrong!", source: "Peer Handshake");
+                return false;
             }
 
             Logger.Log($"Handshake recieved correctly; starting download now", source: "Peer Handshake");
+            Logger.Log($"Now able to init download");
+            return true;
         }
 
         // handshake is very simple so no need for class
@@ -59,6 +75,7 @@ namespace ArchTorrent.Core.PeerProtocol
             // pstrlen: string length of<pstr>, as a single raw byte
             // pstr: string identifier of the protocol
             // reserved: eight(8) reserved bytes. All current implementations use all zeroes.
+            // info hash
             // peer_id: 20 - byte string used as a unique ID for the client.
             // 
             // 
