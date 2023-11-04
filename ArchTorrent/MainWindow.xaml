@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ArchTorrent"
+        xmlns:materialIcons="clr-namespace:Material.Icons.WPF;assembly=Material.Icons.WPF"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800"
         Background="#272829">
@@ -13,8 +14,17 @@
         <SolidColorBrush x:Key="Lighter" Color="#D8D9DA" />
         <SolidColorBrush x:Key="Lightest" Color="#FFF6E0" />
         <SolidColorBrush x:Key="Background" Color="#272829" />
+        <SolidColorBrush x:Key="Secondary" Color="#3702ba" />
     </Window.Resources>
     <Grid>
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                <GradientStop Color="#3702ba" Offset="0"/>
+                <GradientStop Color="#272829" Offset="0.25"/>
+                <GradientStop Color="#272829" Offset="1.0"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+        
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="4.5*"/>
@@ -26,17 +36,37 @@
         </Grid.RowDefinitions>
 
         <!-- Torrent Grid -->
-        <Grid Grid.Row="0" Grid.Column="1"
-              Background="{StaticResource Background}">
+        <Grid Grid.Row="0" Grid.Column="1">
             <!-- Legend -->
 
             <ListView ItemsSource="{Binding Source=Torrents}"
-                      Background="{StaticResource Background}">
+                      Background="Transparent"
+                      BorderThickness="1"
+                      BorderBrush="Transparent"
+                      
+                      >
+                <ListView.Resources>
+                    <Style TargetType="GridViewColumnHeader">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type GridViewColumnHeader}">
+                                    <TextBlock Text="{TemplateBinding Content}" Padding="5" Width="{TemplateBinding Width}" TextAlignment="Center"/>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListView.Resources>
                 <ListView.View>
-                    <GridView AllowsColumnReorder="True" ColumnHeaderToolTip="Torrents">
+                    <GridView AllowsColumnReorder="True" ColumnHeaderToolTip="Torrents"
+                              >
                         
                         <GridViewColumn DisplayMemberBinding="{Binding Info.DirectoryName}"
-                                        Header="Name">
+                                        Header="Name"
+                                        >
                             
                         </GridViewColumn>
 
@@ -52,16 +82,29 @@
             </ListView>
         </Grid>
 
+        <Border Margin="2.5" CornerRadius="8" BorderThickness="0" BorderBrush="Transparent">
+            <Border.Background>
+                <SolidColorBrush Color="#000000" Opacity="0.3"/>
+            </Border.Background>
         <TreeView Grid.Row="0"
                   Grid.Column="0"
-                  Background="#61677A"
-                  >
-            
-        </TreeView>
+                  Background="Transparent"
+                  BorderBrush="Transparent">
+            </TreeView>
+        </Border>
 
         <TabControl Grid.Row="1" Grid.ColumnSpan="2">
-            <TabItem Header="Status">
-                <Label Content="Content goes here..." />
+            <TabControl.Background>
+                <SolidColorBrush Color="Black" Opacity="0.25"/>
+            </TabControl.Background>
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Style>
+            </TabControl.Resources>
+            <TabItem Header="Status" DataContext="{Binding SelectedTorrent}">
+                <Label Content="Content goes here..." Background="Transparent"/>
             </TabItem>
             <TabItem Header="Security" />
             <TabItem Header="Details" />

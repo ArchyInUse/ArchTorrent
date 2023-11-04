@@ -34,6 +34,17 @@ namespace ArchTorrent
         public ObservableCollection<Torrent> Torrents { get; set; } = new ObservableCollection<Torrent>();
         public TorrentClient Client { get; set; }
 
+        private Torrent _selectedTorrent = null;
+        public Torrent SelectedTorrent
+        {
+            get => _selectedTorrent;
+            set
+            {
+                _selectedTorrent = value;
+                NotifyPropertyChanged();
+            }
+        }
+
         public MainWindowViewModel()
         {
             TorrentPaths.Add(@"D:\NewRepos\ArchTorrent\ArchTorrent\sample.torrent");

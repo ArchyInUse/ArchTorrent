@@ -54,6 +54,8 @@ namespace ArchTorrent.Core.PeerProtocol
             var asStr = Encoding.ASCII.GetString(handshakeBuffer);
             Logger.Log($"Handshake Response: {asStr}", source:"Peer Handshake");
 
+            // TODO: message error handling, maybe an IError interface on all of them to signal an error with a boolean
+
             // see if recieved the entire 
             if(!(handshakeBuffer[0] + 49 == handshakeRecieved && Encoding.ASCII.GetString(handshakeBuffer.ReadBytes(1, handshakeBuffer[0])) == "BitTorrent protocol"))
             {

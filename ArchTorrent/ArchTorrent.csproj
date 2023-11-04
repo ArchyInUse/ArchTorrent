@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="BencodeNET" Version="5.0.0" />
+    <PackageReference Include="Material.Icons.WPF" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>
