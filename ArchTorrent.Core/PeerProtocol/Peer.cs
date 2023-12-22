@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -39,15 +40,41 @@ namespace ArchTorrent.Core.PeerProtocol
             // interested / uninterested -> we want / do not want a piece
             // 1. handshake
             // 2. have / bitfield messages
-            
-            await Sock.ConnectAsync(new IPEndPoint(Ip, Port));
-            if (await Sock.SendAsync(ConstructHandshake(), SocketFlags.None, cts) == 0)
+            Logger.Log($"Begin connection request...", source: "Peer Handshake");
+            try
+            { 
+                await Sock.ConnectAsync(new IPEndPoint(Ip, Port));
+            }
+            catch(SocketException)
+            {
+                Logger.Log($"Peer {Ip}:{Port} is unresponsive, Continuing.", source: "Peer Handshake");
+                return false;
+            }
+            byte[] localHandshake = ConstructHandshake();
+            string localHandshakeStr = Encoding.ASCII.GetString(localHandshake);
+            if (await Sock.SendAsync(localHandshake, SocketFlags.None, cts) == 0)
             {
                 Logger.Log($"Critical Error: could not send handshake message to {Ip}:{Port}!", source: "Peer Handshake");
                 return false;
             }
             byte[] handshakeBuffer = new byte[1024];
-            int handshakeRecieved = await Sock.ReceiveAsync(handshakeBuffer, SocketFlags.None, cts);
+            int handshakeRecieved = -1;
+            try
+            {
+                handshakeRecieved = await Sock.ReceiveAsync(handshakeBuffer, SocketFlags.None, cts);
+            }
+            catch(SocketException ex)
+            {
+                Logger.Log($"Socket Exception Method: {ex.Message}");
+            }
+            
+            handshakeRecieved = handshakeRecieved == -1 ? 0 : handshakeRecieved;
+
+            if(handshakeRecieved == 0)
+            {
+                Logger.Log($"Peer {Ip}:{Port} responded with 0 bytes, Continuing.", source: "Peer Handshake");
+                return false;
+            }
 
             Array.Resize(ref handshakeBuffer, handshakeRecieved);
 

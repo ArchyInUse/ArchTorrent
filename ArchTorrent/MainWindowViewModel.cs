@@ -19,7 +19,7 @@ using ArchTorrent.Core.Trackers;
 
 namespace ArchTorrent
 {
-    public class MainWindowViewModel : INotifyPropertyChanged
+    public partial class MainWindowViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
         private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
@@ -47,19 +47,15 @@ namespace ArchTorrent
 
         public MainWindowViewModel()
         {
-            TorrentPaths.Add(@"D:\NewRepos\ArchTorrent\ArchTorrent\sample.torrent");
-            Logger.Log("STARTING LOG");
+            Initialize();
 
-            var tmp = ReadTorrentFile(TorrentPaths[0]);
-
-            Logger.Log("Read torrents successfully");
-
-            Logger.Log("Constructing Torrent...");
-            Torrent torrent = Torrent.BCNetDictToATTorrent(tmp, TorrentPaths[0]);
-            Logger.Log("Completed Construction, outputting to file test.txt");
-
-            torrent.GetPeers().Wait();
-            Torrents.Add(torrent);
+            foreach(var t in Torrents)
+            {
+                t.GetPeers().Wait();
+            }
+            InitEvents();
+            //torrent.GetPeers().Wait();
+            //Torrents.Add(torrent);
 
             //using (StreamWriter sw = new StreamWriter("test.txt"))
             //{
@@ -74,6 +70,31 @@ namespace ArchTorrent
             //string integer = "i52481e";
             //Logger.Log(BencodeObject.DecodeString(str).ToString());
             //Logger.Log(BencodeObject.DecodeInteger(integer).ToString());
+        }
+
+        public void Initialize()
+        {
+#if DEBUG
+            Logger.Log($"Starting in DEBUG mode");
+            TorrentPaths.Add(@"D:\NewRepos\ArchTorrent\ArchTorrent\sample.torrent");
+            Logger.Log("STARTING LOG");
+
+            var tmp = ReadTorrentFile(TorrentPaths[0]);
+
+            Logger.Log("Read torrents successfully");
+
+            Logger.Log("Constructing Torrent...");
+            Torrent torrent = Torrent.BCNetDictToATTorrent(tmp, TorrentPaths[0]);
+            Torrents.Add(torrent);
+            Logger.Log("Completed Construction, outputting to file test.txt");
+#else
+            Logger.Log($"Starting in RELEASE mode");
+
+            // read all from cache json file
+            // add paths
+            // foreach(path in paths)
+            // ReadTorrentFile
+#endif
         }
 
         /// <summary>

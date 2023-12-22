@@ -93,6 +93,8 @@
             </TreeView>
         </Border>
 
+        <Button Content="TestDownload" Command="{Binding TestDownload}"/>
+
         <TabControl Grid.Row="1" Grid.ColumnSpan="2">
             <TabControl.Background>
                 <SolidColorBrush Color="Black" Opacity="0.25"/>
@@ -106,8 +108,10 @@
             <TabItem Header="Status" DataContext="{Binding SelectedTorrent}">
                 <Label Content="Content goes here..." Background="Transparent"/>
             </TabItem>
-            <TabItem Header="Security" />
             <TabItem Header="Details" />
+            <TabItem Header="Files" />
+            <TabItem Header="Peers" />
+            <TabItem Header="Options" />
         </TabControl>
     </Grid>
 </Window>
