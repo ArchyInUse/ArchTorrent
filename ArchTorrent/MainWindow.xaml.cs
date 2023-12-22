@@ -26,6 +26,7 @@ namespace ArchTorrent
             InitializeComponent();
             var vm = new MainWindowViewModel();
             this.vm = vm;
+            this.DataContext = vm;
         }
     }
 }

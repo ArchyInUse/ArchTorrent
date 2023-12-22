@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -49,7 +50,6 @@ namespace ArchTorrent.Core.Trackers
             // connect to host
             Logger.Log($"Connecting to host {AnnounceURI}, host {AnnounceURI.DnsSafeHost}", source: "UdpTracker");
             
-            // this should be in its own function
             ConnectRequest connectReq = new ConnectRequest();
 
             Logger.Log($"Sending connect request", source: "UdpTracker");
@@ -106,6 +106,120 @@ namespace ArchTorrent.Core.Trackers
             return announceResponse.peers;
         }
 
+        /// <summary>
+        /// Attempts to connect a socket to a URI, if a corresponding IP is found, returns true and can continue to go.
+        /// </summary>
+        private async Task<IPAddress?> FindUriIPAsync(Uri uri)
+        {
+            Logger.Log($"Start FindUriIPAsync", source: "FindUriIP");
+            IPAddress[] addresses = await Dns.GetHostAddressesAsync(uri.Host).WithTimeout(TimeSpan.FromSeconds(5));
+            Socket sockv4 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            Exception lastex = null;
+            foreach(IPAddress address in addresses)
+            {
+                try
+                {
+                    await sockv4.ConnectAsync(address, uri.Port);
+                    Logger.Log($"Found IP for host: {uri.Host}:{address}", Logger.LogLevel.INFO, source:"FindUriIP");
+                    sockv4.Close();
+                    return address;
+                }
+                catch (Exception ex)
+                {
+                    lastex = ex;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// socket implementation
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        private async Task<byte[]?> ExecuteUdpRequest3(Uri uri, byte[] message)
+        {
+            byte[]? data = null;
+            if (uri == null) throw new ArgumentNullException(nameof(uri));
+            if (message == null) throw new ArgumentNullException(nameof(message));
+
+            int port = await Torrent.PortList.AwaitOpenPort();
+
+            IPEndPoint ep = new IPEndPoint(IPAddress.Any, port);
+
+            try
+            {
+                Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+
+                // get IP through DNS
+                string p = uri.Host;
+
+                Logger.Log($"Listening on : {ep}");
+
+                // udpClient.Client.SendTimeout = (int)TimeSpan.FromSeconds(5).TotalMilliseconds;
+                // udpClient.Client.ReceiveTimeout = (int)TimeSpan.FromSeconds(5).TotalMilliseconds;
+
+                Logger.Log($"sending message to {uri.Host}, returning.", source: "UdpRequest");
+
+                IPAddress? externalIp = await FindUriIPAsync(uri);
+                
+                if(externalIp == null)
+                {
+                    return null;
+                }
+
+                EndPoint externalEp = new IPEndPoint(externalIp, uri.Port);
+
+                await sock.ConnectAsync(externalEp);
+
+                int numBytesSent = await sock.SendAsync(message, SocketFlags.None);
+                Logger.Log($"Sent: {numBytesSent}", source: "UdpRequest");
+
+                byte[] res = new byte[1024];
+                //var res = udpClient.BeginReceive(null, null);
+                try
+                {
+                    CancellationTokenSource cts = new CancellationTokenSource();
+
+                    Task<int> numBytesReceived = sock.ReceiveAsync(res, SocketFlags.None, cts.Token).AsTask();
+                    cts.CancelAfter(5000);
+                    await (numBytesReceived.WithTimeout(TimeSpan.FromSeconds(5)));
+                    Array.Resize(ref res, numBytesReceived.Result);
+                }
+                catch (OperationCanceledException ex)
+                {
+                    res = null;
+                }
+                // begin recieve right after request
+                if (res != null && res.Length < 1)
+                {
+                    Logger.Log($"Recieved message from endpoint, returning.", source: "UdpRequest");
+
+                    data = null;
+                }
+                else
+                {
+                    Logger.Log($"No Bytes Recieved from UdpRequest", source: "UdpRequest");
+                    // here the client just times out.
+                }
+            }
+            catch (SocketException ex)
+            {
+                Logger.Log($"Failed UDP tracker message to {uri} for torrent {Torrent.InfoHash}: {ex.Message}");
+            }
+            Torrent.PortList.SetPortUnused(port);
+            return data;
+        }
+
+        /// <summary>
+        /// UdpClient.ReceiveAsync(...) implementation
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         private async Task<byte[]?> ExecuteUdpRequest2(Uri uri, byte[] message)
         {
             byte[]? data = null;
@@ -118,7 +232,8 @@ namespace ArchTorrent.Core.Trackers
 
             try
             {
-                using UdpClient udpClient = new UdpClient(ep);
+                using UdpClient udpClient = new(ep);
+                
                 Logger.Log($"Listening on : {ep}");
 
                 udpClient.Client.SendTimeout = (int)TimeSpan.FromSeconds(5).TotalMilliseconds;
@@ -133,15 +248,14 @@ namespace ArchTorrent.Core.Trackers
                 //var res = udpClient.BeginReceive(null, null);
                 try
                 {
-                    CancellationTokenSource cts = new CancellationTokenSource();
-
-                    var timer = new Timer(state => cts.Cancel(), null, 5000, Timeout.Infinite);
-                    res = await udpClient.ReceiveAsync().WithCancellation(cts.Token);
+                    res = await (udpClient.ReceiveAsync().WithTimeout(TimeSpan.FromSeconds(5)));
                 }
-                catch (OperationCanceledException ex)
+                catch (TimeoutException ex)
                 {
+                    Logger.Log($"!!! Timeout Exception !!!");
                     res = null;
                 }
+
                 // begin recieve right after request
                 if (res != null && res?.Buffer != null && res?.Buffer.Length > 0)
                 {
@@ -214,22 +328,6 @@ namespace ArchTorrent.Core.Trackers
             }
 
             return data;
-        }
-    }
-
-    public static class TaskExtensions
-    {
-        public static async Task<T> WithCancellation<T>(this Task<T> task, CancellationToken cancellationToken)
-        {
-            var tcs = new TaskCompletionSource<bool>();
-            using (cancellationToken.Register(() => tcs.TrySetResult(true)))
-            {
-                if (task != await Task.WhenAny(task, tcs.Task))
-                {
-                    throw new OperationCanceledException(cancellationToken);
-                }
-            }
-            return await task;
         }
     }
 }
