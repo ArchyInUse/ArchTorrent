@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ArchTorrent"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:materialIcons="clr-namespace:Material.Icons.WPF;assembly=Material.Icons.WPF"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800"
@@ -30,21 +31,33 @@
             <ColumnDefinition Width="4.5*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
+            <RowDefinition Height=".5*"/>
             <RowDefinition Height="3*"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="0.25*"/>
         </Grid.RowDefinitions>
 
+        <!-- Menu -->
+        <StackPanel Grid.ColumnSpan="2">
+            <Menu Name="hello">
+                <MenuItem Header="File"/>
+                <MenuItem Header="Edit"/>
+                <MenuItem Header="Torrent"/>
+                <MenuItem Header="View"/>
+                <MenuItem Header="About"/>
+            </Menu>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock>HELLO</TextBlock>
+            </StackPanel>
+        </StackPanel>
+        
         <!-- Torrent Grid -->
-        <Grid Grid.Row="0" Grid.Column="1">
+        <Grid Grid.Row="1" Grid.Column="1">
             <!-- Legend -->
-
             <ListView ItemsSource="{Binding Source=Torrents}"
                       Background="Transparent"
                       BorderThickness="1"
-                      BorderBrush="Transparent"
-                      
-                      >
+                      BorderBrush="Transparent">
                 <ListView.Resources>
                     <Style TargetType="GridViewColumnHeader">
                         <Setter Property="Background" Value="Transparent"/>
@@ -82,7 +95,11 @@
             </ListView>
         </Grid>
 
-        <Border Margin="2.5" CornerRadius="8" BorderThickness="0" BorderBrush="Transparent">
+        <Border Grid.Row="1" 
+                Margin="2.5" 
+                CornerRadius="8" 
+                BorderThickness="0" 
+                BorderBrush="Transparent">
             <Border.Background>
                 <SolidColorBrush Color="#000000" Opacity="0.3"/>
             </Border.Background>
@@ -92,10 +109,11 @@
                   BorderBrush="Transparent">
             </TreeView>
         </Border>
+   
 
-        <Button Content="TestDownload" Command="{Binding TestDownload}"/>
+        <Button Grid.Row="1" Content="TestDownload" Command="{Binding TestDownload}"/>
 
-        <TabControl Grid.Row="1" Grid.ColumnSpan="2">
+        <TabControl Grid.Row="2" Grid.ColumnSpan="2">
             <TabControl.Background>
                 <SolidColorBrush Color="Black" Opacity="0.25"/>
             </TabControl.Background>

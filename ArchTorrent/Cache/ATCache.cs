@@ -27,7 +27,7 @@ namespace ArchTorrent.Cache
 
         public async static Task<ATCache?> GetCache()
         {
-            ATCache? cache = new();
+            ATCache? cache = new(Array.Empty<string>());
             
             // we don't save the cache without content, so the GetCache would always work.
             // unless Save() is called, there is no reason to store the cache empty
@@ -41,7 +41,7 @@ namespace ArchTorrent.Cache
             cache = JsonConvert.DeserializeObject<ATCache>(json);
             if(cache == null)
             {
-                cache = new ATCache();
+                cache = new ATCache(Array.Empty<string>());
                 return cache;
             }
 

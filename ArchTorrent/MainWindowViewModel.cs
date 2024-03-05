@@ -48,12 +48,12 @@ namespace ArchTorrent
         public MainWindowViewModel()
         {
             Initialize();
-
-            foreach(var t in Torrents)
-            {
-                t.GetPeers().Wait();
-            }
             InitEvents();
+
+            //foreach(var t in Torrents)
+            //{
+            //    t.GetPeers();
+            //}
             //torrent.GetPeers().Wait();
             //Torrents.Add(torrent);
 

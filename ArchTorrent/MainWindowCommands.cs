@@ -19,7 +19,15 @@ namespace ArchTorrent
 
         public void InitEvents()
         {
-            TestDownload = new Command(InvokeTestDownload);
+            TestDownload = new Command(InvokeTestDownload2);
+        }
+
+        public async void InvokeTestDownload2()
+        {
+            foreach(var t in Torrents)
+            {
+                t.GetPeers();
+            }
         }
 
         public async void InvokeTestDownload()

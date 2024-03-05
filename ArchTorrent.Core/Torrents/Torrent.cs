@@ -22,7 +22,7 @@ namespace ArchTorrent.Core.Torrents
         [JsonProperty]
         public string FullFilePath { get; set; }
 
-        internal static PortList PortList = new PortList();
+        internal static PortList PortList = new();
 
         #region Mandatory Fields
 
@@ -93,9 +93,17 @@ namespace ArchTorrent.Core.Torrents
             toDel.ForEach(x => Trackers.Remove(x));
 
             var a = new List<List<Peer>>(b);
+            Logger.Log($"[!] List of peers:", source:"GetPeers");
             a.ForEach(x => x.ForEach(y => Logger.Log($"PEER: {y}")));
 
             return Trackers.Count > 0;
+        }
+
+        public async Task<bool> InitDownload()
+        {
+            await GetPeers();
+            Logger.Log("Begun Download");
+            return true;
         }
 
         // TODO: implement
