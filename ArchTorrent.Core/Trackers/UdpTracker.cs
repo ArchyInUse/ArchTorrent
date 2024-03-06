@@ -38,7 +38,7 @@ namespace ArchTorrent.Core.Trackers
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
         /// <exception cref="InvalidDataException"></exception>
-        public async Task<List<Peer>> TryGetPeers()
+        public override async Task<List<Peer>> TryGetPeers()
         {
             List<Peer> defaultRet = new();
             Logger.Log("Begin GetPeers", source: "UdpTracker");
