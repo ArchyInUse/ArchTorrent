@@ -85,6 +85,7 @@ namespace ArchTorrent.Core.NetworkManager
             instance = this;
         }
 
+        #region Response
         private void ConnectionAcceptedCallback(IAsyncResult ar)
         {
             Socket? s = ar.AsyncState as Socket;
@@ -187,5 +188,18 @@ namespace ArchTorrent.Core.NetworkManager
             // TODO: test this in action using UI (WPF) to see which ports are usually picked by UDP services
             return OccupiedPorts.Last(x => !x.Value).Key;
         }
+
+        #endregion
+
+        #region Requests
+
+        public async Task<bool> SendUDPAsync(Uri uri, byte[] data)
+        {
+            using UdpClient udpClient = new UdpClient();
+            var bytesSent = await udpClient.SendAsync(data, data.Length, uri.Host, uri.Port);
+            return bytesSent != 0;
+        }
+
+        #endregion
     }
 }
