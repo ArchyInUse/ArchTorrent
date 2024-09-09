@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ArchTorrent.Core.NetworkManager
+namespace ArchTorrent.Core
 {
     /// <summary>
     /// This class is going to manage network listening, each request is going to *have* to have an identifier
@@ -25,7 +25,8 @@ namespace ArchTorrent.Core.NetworkManager
 
         /// <summary>
         /// The low and high range limits for port listening are the ports the network manager will use for
-        /// sockets, it recommended to leave these unchanged.
+        /// sockets, it recommended to leave these unchanged
+        /// note: port 6890 will be used for the HTTP client as to not interfere with the UDP trackers.
         /// </summary>
         public int HighRangeLimit = 6889;
         /// <summary>
@@ -40,7 +41,7 @@ namespace ArchTorrent.Core.NetworkManager
         /// instance is initialized, the program should stop.
         /// </summary>
         private static bool InstanceExists = false;
-        private static NetworkManager instance;
+        public static NetworkManager instance;
 
         /// <summary>
         /// Timeout for each request until it returns automatically.
@@ -110,7 +111,11 @@ namespace ArchTorrent.Core.NetworkManager
                 return;
             }
             // not null for sure as a null check is handled beforehand.
+
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
             IPAddress ip = (s.RemoteEndPoint as IPEndPoint).Address;
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+
             if (MessageActions.Keys.Contains(ip))
             {
                 int bytesRecieved = s.EndReceive(ar);
@@ -167,6 +172,7 @@ namespace ArchTorrent.Core.NetworkManager
             return result;
         }
 
+
         private void Kill(string message)
         {
             // TODO: Proper error handling is needed here, the (generic) Exception is intended for now.
@@ -174,6 +180,8 @@ namespace ArchTorrent.Core.NetworkManager
             sockets.ForEach(s => s.Close());
             throw new Exception("CRITICAL KILL");
         }
+
+        public static IPAddress GetIpFromUri(Uri uri) => Dns.GetHostAddresses(uri.Host)[0];
 
         /// <summary>
         /// Gets the last unoccupied port (between the range of ports)

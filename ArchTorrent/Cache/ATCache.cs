@@ -9,6 +9,8 @@ using Newtonsoft.Json;
 using ArchTorrent.Core.Torrents;
 using System.Text.Json.Serialization;
 using System.Collections;
+using System.Runtime.CompilerServices;
+using ArchTorrent.Core;
 
 namespace ArchTorrent.Cache
 {
@@ -19,61 +21,62 @@ namespace ArchTorrent.Cache
     public class ATCache : IEnumerable<string>
     {
         [JsonProperty]
-        public List<string> TorrentPaths { get; set; }
+        public List<string> infoHashes { get; set; } = new List<string>();
 
         [JsonProperty]
-        public bool Empty = false;
-        public const string CachePath = @"%appdata%\ArchTorrent\Cache.json";
+        public Dictionary<string, Torrent> Torrents { get; set; } = new();
 
-        public async static Task<ATCache?> GetCache()
+        [JsonProperty]
+        private static string defaultPath = @"%appdata%\ArchTorrent\Cache.json";
+
+        public static ATCache Instance { get; set; }
+
+        public ATCache() { }
+
+        /// <summary>
+        /// Returns null if a cache is not found.
+        /// </summary>
+        /// <param name="uniquePath"></param>
+        /// <returns></returns>
+        public async static Task<ATCache?> Load(string uniquePath = "")
         {
-            ATCache? cache = new(Array.Empty<string>());
-            
-            // we don't save the cache without content, so the GetCache would always work.
-            // unless Save() is called, there is no reason to store the cache empty
-            if (!File.Exists(CachePath))
+            string Path = uniquePath == "" ? uniquePath : defaultPath;
+            if(!File.Exists(Path))
             {
-                cache.Empty = true;
+                Logger.Log("Cache not found. Creating a new cache with default settings.");
+
+                return new ATCache();
+            }
+
+            string cache = await File.ReadAllTextAsync(Path);
+            ATCache? loadedCache;
+            try
+            {
+                loadedCache = JsonConvert.DeserializeObject<ATCache>(cache);
+            }
+            catch(Exception ex)
+            {
+                Logger.Log($"Error loading cache: {ex.Message}, returning null cache.");
+                return null;
+            }
+            
+            if(loadedCache == null)
+            {
+                Logger.Log("Cache deserialization failed. Returning null cache.");
                 return null;
             }
 
-            string json = await File.ReadAllTextAsync(CachePath);
-            cache = JsonConvert.DeserializeObject<ATCache>(json);
-            if(cache == null)
-            {
-                cache = new ATCache(Array.Empty<string>());
-                return cache;
-            }
-
-            foreach(var b in cache)
-            {
-                if(!File.Exists(b))
-                {
-                    cache.TorrentPaths.Remove(b);
-                }
-            }
-            return cache;
+            return loadedCache;
         }
 
-        public ATCache(IEnumerable<string> paths)
+        public IEnumerator<string> GetEnumerator()
         {
-            if(paths.Count() == 0)
-            {
-                Empty = true;
-            }
-            TorrentPaths = paths.ToList();
+            return infoHashes.GetEnumerator();
         }
 
-        public void ForEach(Action<string> action) => TorrentPaths.ForEach(action);
-
-        public async Task Save()
+        IEnumerator IEnumerable.GetEnumerator()
         {
-            var json = JsonConvert.SerializeObject(TorrentPaths);
-            await File.WriteAllTextAsync(CachePath, json);
+            return infoHashes.GetEnumerator();
         }
-
-        public IEnumerator<string> GetEnumerator() => TorrentPaths.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => TorrentPaths.GetEnumerator();
-    }
+    } 
 }

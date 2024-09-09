@@ -32,6 +32,14 @@ namespace ArchTorrent.Core.Torrents
         [JsonProperty]
         public string AnnounceURL { get; set; }
 
+        [JsonProperty]
+        public long Uploaded { get; set; } = 0;
+
+        [JsonProperty]
+        public long Downloaded { get; set; } = 0;
+
+        public long Left { get => Info.Size - Downloaded; }
+
         // TODO: change this so it can be both UDP & HTTP
         [JsonProperty]
         public List<UdpTracker> Trackers { get; set; } = new List<UdpTracker>();
@@ -53,6 +61,8 @@ namespace ArchTorrent.Core.Torrents
         #endregion
 
         public string InfoHash { get => TorrentUtil.CalculateInfoHash(Info.OriginalDictionary); }
+
+        public byte[] InfoHashBytes { get => TorrentUtil.CalculateInfoHashBytes(Info.OriginalDictionary); }
 
         /// <summary>
         /// creates a Torrent skeleton until .Read() is called

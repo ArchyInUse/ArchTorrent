@@ -1,16 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using ArchTorrent.Core.PeerProtocol;
 using ArchTorrent.Core.Torrents;
 using ArchTorrent.Core.Trackers.UDPTrackerProtocol;
-using BencodeNET.Parsing;
 
 namespace ArchTorrent.Core.Trackers
 {
@@ -40,6 +32,8 @@ namespace ArchTorrent.Core.Trackers
         /// <exception cref="InvalidDataException"></exception>
         public override async Task<List<Peer>> TryGetPeers()
         {
+            IPAddress ip = NetworkManager.GetIpFromUri(AnnounceURI);
+            var networkManager = NetworkManager.instance;
             List<Peer> defaultRet = new();
             Logger.Log("Begin GetPeers", source: "UdpTracker");
 
@@ -49,7 +43,14 @@ namespace ArchTorrent.Core.Trackers
             ConnectRequest connectReq = new ConnectRequest();
 
             Logger.Log($"Sending connect request", source: "UdpTracker");
-            byte[]? conResData = await ExecuteUdpRequest3(AnnounceURI, connectReq.Serialize());
+            
+            if(!await networkManager.SendUDPAsync(AnnounceURI, connectReq.Serialize()))
+            {
+                Logger.Log($"Connection attempt to {AnnounceURI} failed, skipping tracker...");
+                return defaultRet;
+            }
+
+            byte[]? conResData = await networkManager.WaitForResponseAsync(ip);
 
             //if (conResData == null) throw new InvalidDataException("Bytes not recieved from UDP request (connection request)");
             //if (conResData.Length < 15) throw new InvalidDataException($"Invalid amount of data recieved, expected: 16; got: {conResData.Length}");
@@ -76,9 +77,15 @@ namespace ArchTorrent.Core.Trackers
 
             AnnounceRequest announceReq = new AnnounceRequest(connectRes.connection_id, Torrent);
             Logger.Log("Built announce request, sending...");
+          
+            bool conResSent = await networkManager.SendUDPAsync(AnnounceURI ,announceReq.Serialize());
+            if (!conResSent)
+            { 
+                Logger.Log("Unable to send connection response");
+                return defaultRet;
+            }
 
-            conResData = await ExecuteUdpRequest3(AnnounceURI, announceReq.Serialize());
-
+            conResData = await networkManager.WaitForResponseAsync(ip);
             // if (conResData == null) throw new InvalidDataException($"Bytes not recieved from UDP request (announce request)");
             if (conResData == null)
             {
@@ -185,7 +192,7 @@ namespace ArchTorrent.Core.Trackers
                     var numBytesReceived = await sock.ReceiveAsync(res, SocketFlags.None, cts.Token);
                     Array.Resize(ref res, numBytesReceived);
                 }
-                catch (OperationCanceledException ex)
+                catch (OperationCanceledException)
                 {
                     sock.Close();
                     res = null;
@@ -250,7 +257,7 @@ namespace ArchTorrent.Core.Trackers
                 {
                     res = await udpClient.ReceiveAsync();
                 }
-                catch (TimeoutException ex)
+                catch (TimeoutException)
                 {
                     Logger.Log($"!!! Timeout Exception !!!");
                     res = null;

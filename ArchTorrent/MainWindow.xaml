@@ -130,6 +130,9 @@
             <TabItem Header="Files" />
             <TabItem Header="Peers" />
             <TabItem Header="Options" />
+            <TabItem Header="Debug">
+                <Button Content="Debug Window" Command="{Binding OpenDebugWindow}"/>
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>

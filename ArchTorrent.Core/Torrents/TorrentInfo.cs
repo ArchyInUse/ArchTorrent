@@ -47,6 +47,7 @@ namespace ArchTorrent.Core.Torrents
         [JsonProperty]
         public bool SingleFile { get; private set; } = false;
 
+        [JsonProperty]
         public BDictionary OriginalDictionary { get; private set; }
 
         public TorrentInfo(BDictionary infoDict)

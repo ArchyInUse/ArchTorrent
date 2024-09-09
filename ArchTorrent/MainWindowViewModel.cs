@@ -16,6 +16,7 @@ using ArchTorrent.Core.Torrents;
 using Newtonsoft.Json;
 using System.Net;
 using ArchTorrent.Core.Trackers;
+using ArchTorrent.Models;
 
 namespace ArchTorrent
 {
@@ -45,10 +46,13 @@ namespace ArchTorrent
             }
         }
 
+        public static DebugWindowModel DebugInstance;
+
         public MainWindowViewModel()
         {
             Initialize();
             InitEvents();
+            DebugInstance = new();
 
             //foreach(var t in Torrents)
             //{
@@ -74,6 +78,8 @@ namespace ArchTorrent
 
         public void Initialize()
         {
+            // initialize the network manager
+            NetworkManager instance = new NetworkManager();
 #if DEBUG
             Logger.Log($"Starting in DEBUG mode");
             TorrentPaths.Add(@"D:\NewRepos\ArchTorrent\ArchTorrent\sample.torrent");

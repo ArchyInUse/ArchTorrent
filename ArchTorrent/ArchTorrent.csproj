@@ -23,6 +23,7 @@
   <ItemGroup>
     <Folder Include="Converters\" />
     <Folder Include="Images\" />
+    <Folder Include="Logger\" />
   </ItemGroup>
 
 </Project>

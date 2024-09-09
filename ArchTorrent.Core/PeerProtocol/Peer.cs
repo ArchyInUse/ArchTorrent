@@ -18,15 +18,31 @@ namespace ArchTorrent.Core.PeerProtocol
         public Socket Sock { get; set; }
         public string InfoHash { get; set; }
 
+        /// <summary>
+        /// Optional, and will potentially not be in use.
+        /// </summary>
+        public string peerId { get; set; } = "";
+
         // 32kb buffer
         private byte[] buffer = new byte[1024 * 32];
 
-        public Peer(byte[] ip, Int16 port, string infoHash)
+        public Peer(byte[] ip, Int16 port, string infoHash, string id = "")
         {
             Ip = new IPAddress(ip);
             Port = port;
             Sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             InfoHash = infoHash;
+            peerId = id;
+        }
+
+        public Peer(byte[] ip, byte[] port, string infoHash, string id = "")
+        {
+            Ip = new IPAddress(ip);
+
+            Port = TrackerMessageHelpers.DecodeInt16(port);
+            Sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            InfoHash = infoHash;
+            peerId = id;
         }
 
         public override string ToString()
