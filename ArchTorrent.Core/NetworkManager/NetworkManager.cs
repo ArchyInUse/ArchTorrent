@@ -110,8 +110,8 @@ namespace ArchTorrent.Core
                 Logger.Log("Async state is null in message recieved callback.", source: "NetworkManager");
                 return;
             }
-            // not null for sure as a null check is handled beforehand.
 
+            // not null for sure as a null check is handled beforehand.
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             IPAddress ip = (s.RemoteEndPoint as IPEndPoint).Address;
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
@@ -169,6 +169,7 @@ namespace ArchTorrent.Core
             });
             await Task.Delay(TimeSpan.FromSeconds(Timeout), ct.Token);
             if (result == null) return Array.Empty<byte>();
+            MessageActions.Remove(ip);
             return result;
         }
 

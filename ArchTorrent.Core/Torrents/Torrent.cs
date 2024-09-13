@@ -42,7 +42,7 @@ namespace ArchTorrent.Core.Torrents
 
         // TODO: change this so it can be both UDP & HTTP
         [JsonProperty]
-        public List<UdpTracker> Trackers { get; set; } = new List<UdpTracker>();
+        public List<Tracker> Trackers { get; set; } = new List<Tracker>();
 
         #endregion
 
@@ -73,7 +73,15 @@ namespace ArchTorrent.Core.Torrents
             FullFilePath = fullPath;
             foreach(string announce in announces)
             {
-                Trackers.Add(new UdpTracker(this, announce));
+                // TODO: account for HTTP trackers
+                if (announce.StartsWith("http"))
+                    Trackers.Add(new HttpTracker(this, announce));
+                else if(announce.StartsWith("udp"))
+                    Trackers.Add(new UdpTracker(this, announce));
+                else
+                {
+                    Logger.Log($"Invalid announce URI in torrent: {announce}. Skipping.", Logger.LogLevel.ERROR , source: "Torrent Constructor");
+                }
             }
         }
 
@@ -93,7 +101,7 @@ namespace ArchTorrent.Core.Torrents
             Logger.Log($"Amount of tasks: {tasks.Count}");
             var b = await Task.WhenAll(tasks);
             Logger.Log($"Completed all {tasks.Count} tasks!");
-            List<UdpTracker> toDel = new();
+            List<Tracker> toDel = new();
 
             foreach(var tracker in Trackers)
             {
@@ -137,7 +145,6 @@ namespace ArchTorrent.Core.Torrents
                     {
                         BString? aStr = bstr as BString;
                         if (aStr == null) continue;
-                        if (!aStr.ToString().StartsWith("udp")) continue;
                         Logger.Log($"Adding URL: {aStr}", source: "---Initialize Torrent---");
                         announces.Add(aStr.ToString());
                     }

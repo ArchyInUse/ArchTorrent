@@ -13,6 +13,7 @@ namespace ArchTorrent.Core.Trackers
         public string AnnounceUrl { get; set; }
         public Uri AnnounceURI { get; set; }
         public Torrent Torrent { get; set; }
+        public List<Peer> Peers { get; set; } = new List<Peer>();
 
         public abstract Task<List<Peer>> TryGetPeers();
     }

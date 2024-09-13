@@ -10,8 +10,6 @@ namespace ArchTorrent.Core.Trackers
     {
         public int ListenPort;
 
-        public List<Peer> Peers { get; set; } = new List<Peer>();
-
         public UdpTracker(Torrent torrent, string announceUrl)
         {
             Torrent = torrent;

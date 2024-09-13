@@ -17,7 +17,6 @@ namespace ArchTorrent.Core.Trackers
         private bool SSL;
         private readonly HttpClient _httpClient;
         private readonly int listenPort = 6890;
-        private List<Peer> peers;
 
         /// <summary>
         /// interval between regular requests to tracker.
@@ -31,7 +30,7 @@ namespace ArchTorrent.Core.Trackers
 
         public int Seeders { get; set; } = 0;
         public int Leechers { get; set; } = 0;
-        public int PeerCount { get => peers.Count; }
+        public int PeerCount { get => Peers.Count; }
 
         public HttpTracker(Torrent torrent, string announceURL) 
         {
@@ -44,7 +43,7 @@ namespace ArchTorrent.Core.Trackers
                 AutomaticDecompression = DecompressionMethods.All
             };
             _httpClient = new HttpClient(handler);
-            peers = new List<Peer>();
+            Peers = new List<Peer>();
         }
 
         /// <summary>
