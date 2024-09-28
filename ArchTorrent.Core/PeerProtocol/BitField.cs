@@ -23,14 +23,23 @@ namespace ArchTorrent.Core.PeerProtocol
         /// The hashset is used instead of a list so that should a duplicate arrive, an exception can be raised, which will-
         /// reset the peer.
         /// </summary>
-        private HashSet<int> ongoingDownloads;
+        private HashSet<int> ongoingDownloads = new();
 
         private readonly object _lock = new object();
 
         public TorrentBitField(int size)
         {
             _data = new byte[size];
-            ongoingDownloads = new();
+        }
+
+        /// <summary>
+        /// on a cached torrent, we can directly take the data from the b64 string 
+        /// </summary>
+        /// <param name="data"></param>
+        public TorrentBitField(string data)
+        {
+            if(string.IsNullOrEmpty(data)) throw new ArgumentNullException("Data parameter is null or empty.");
+            _data = Convert.FromBase64String(data);
         }
 
         /// <summary>
@@ -126,5 +135,14 @@ namespace ArchTorrent.Core.PeerProtocol
                 return true;
             }
         }
+
+        #region Json Helpers
+
+        public string Serialize
+        {
+            get => Convert.ToBase64String(_data);
+        }
+
+        #endregion
     }
 }
