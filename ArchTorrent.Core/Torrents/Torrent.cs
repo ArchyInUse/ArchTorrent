@@ -40,7 +40,6 @@ namespace ArchTorrent.Core.Torrents
 
         public long Left { get => Info.Size - Downloaded; }
 
-        // TODO: change this so it can be both UDP & HTTP
         [JsonProperty]
         public List<Tracker> Trackers { get; set; } = new List<Tracker>();
 
@@ -63,6 +62,15 @@ namespace ArchTorrent.Core.Torrents
         public string InfoHash { get => TorrentUtil.CalculateInfoHash(Info.OriginalDictionary); }
 
         public byte[] InfoHashBytes { get => TorrentUtil.CalculateInfoHashBytes(Info.OriginalDictionary); }
+
+        // TODO: While I doubt it, this is potentially a slow hazard and needs to be benchmarked
+        // at the time of writing, I can't be sure 
+        public List<Peer> Peers { get
+            {
+                var p = new List<Peer>();
+                Trackers.ForEach(x => p.AddRange(x.Peers));
+                return p;
+            } }
 
         /// <summary>
         /// creates a Torrent skeleton until .Read() is called
@@ -117,6 +125,21 @@ namespace ArchTorrent.Core.Torrents
             return Trackers.Count > 0;
         }
 
+        /// <summary>
+        /// deletes a peer from the peer list in 
+        /// </summary>
+        /// <param name="peer"></param>
+        /// <returns></returns>
+        public void DestroyPeer(Peer peer)
+        {
+            foreach(Tracker t in Trackers)
+            {
+                if(t.Peers.Any(x => x.Ip == peer.Ip))
+                {
+                    t.Peers.Remove(peer);
+                }
+            }
+        }
         public async Task<bool> InitDownload()
         {
             await GetPeers();

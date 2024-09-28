@@ -43,7 +43,7 @@ namespace ArchTorrent
                 foreach (Peer p in u.Peers)
                 {
                     Logger.Log($"Testing peer {i}/{total}");
-                    results[i] = p.InitDownloadAsync(cancellationToken);
+                    results[i] = p.HandshakePeer(cancellationToken);
                     i++;
                 }
             }

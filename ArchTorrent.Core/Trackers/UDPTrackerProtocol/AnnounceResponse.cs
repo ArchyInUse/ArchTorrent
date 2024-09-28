@@ -28,7 +28,7 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
         // these directly correspond to each other
         public List<Peer> peers;
 
-        public AnnounceResponse(byte[] source, string infoHash)
+        public AnnounceResponse(byte[] source, string infoHash, UdpTracker tracker)
         {
             action = source.ReadBytes(0, 4).DecodeInt32();
             transaction_id = source.ReadBytes(4, 4).DecodeInt32();
@@ -46,7 +46,7 @@ namespace ArchTorrent.Core.Trackers.UDPTrackerProtocol
 
                 var ip = bytes.ReadBytes(0, 4);
                 var port = bytes.ReadBytes(4, 2).DecodeInt16();
-                Peer pair = new(ip, port, infoHash);
+                Peer pair = new(ip, port, infoHash, tracker);
                 if (pair.Port < 0) continue;
                 peers.Add(pair);
             }

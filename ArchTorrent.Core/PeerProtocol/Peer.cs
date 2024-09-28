@@ -9,14 +9,34 @@ using System.Threading.Tasks;
 using ArchTorrent.Core.Torrents;
 using ArchTorrent.Core.Trackers;
 
+/// From my research the usual way that a peer piece exchange works is as follows:
+/// 1. Handshake
+/// 2. Send a bitfield 
+/// 3. Receive a bitfield (parse)
+/// 4. Send a request for a piece
+/// 5. Receive a piece message
+/// 
+
 namespace ArchTorrent.Core.PeerProtocol
 {
-    public class Peer
+    public class Peer : IEquatable<Peer>
     {
         public IPAddress Ip { get; set; }
         public int Port { get; set; }
         public Socket Sock { get; set; }
         public string InfoHash { get; set; }
+        private Tracker tracker;
+        public bool IsConnected { get => Sock.Connected; }
+
+        public bool Am_Choking { get; private set; } = true;
+        public bool Am_Interested { get; private set; } = false;
+        /// <summary>
+        /// when a peer chokes the client, it is a notification that no requests will be answered
+        /// until the client is unchoked, The client should not attemt to send requests for blocks and it should consider all
+        /// pending requests to be discarded by the remote peer.
+        /// </summary>
+        public bool Peer_Choking { get;  private set; } = true;
+        public bool Peer_Interested { get; private set; } = false;
 
         /// <summary>
         /// Optional, and will potentially not be in use.
@@ -26,23 +46,24 @@ namespace ArchTorrent.Core.PeerProtocol
         // 32kb buffer
         private byte[] buffer = new byte[1024 * 32];
 
-        public Peer(byte[] ip, Int16 port, string infoHash, string id = "")
+        public Peer(byte[] ip, Int16 port, string infoHash, Tracker tracker, string id = "")
         {
             Ip = new IPAddress(ip);
             Port = port;
             Sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             InfoHash = infoHash;
             peerId = id;
+            this.tracker = tracker;
         }
 
-        public Peer(byte[] ip, byte[] port, string infoHash, string id = "")
+        public Peer(byte[] ip, byte[] port, string infoHash, Tracker tracker, string id = "")
         {
             Ip = new IPAddress(ip);
-
             Port = TrackerMessageHelpers.DecodeInt16(port);
             Sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             InfoHash = infoHash;
             peerId = id;
+            this.tracker = tracker;
         }
 
         public override string ToString()
@@ -50,7 +71,7 @@ namespace ArchTorrent.Core.PeerProtocol
             return $"Peer: {Ip}:{Port}";
         }
 
-        public async Task<bool> InitDownloadAsync(CancellationToken cts)
+        public async Task<bool> HandshakePeer(CancellationToken cts)
         {
             // choke / unchoke -> peer does not want / does want to give a piece
             // interested / uninterested -> we want / do not want a piece
@@ -63,14 +84,15 @@ namespace ArchTorrent.Core.PeerProtocol
             }
             catch(SocketException)
             {
-                Logger.Log($"Peer {Ip}:{Port} is unresponsive, Continuing.", source: "Peer Handshake");
+                Logger.Log($"Peer {Ip}:{Port} is unresponsive, destroying peer.", source: "Peer Handshake");
+                tracker.Peers.Remove(this);
                 return false;
             }
             byte[] localHandshake = ConstructHandshake();
-            string localHandshakeStr = Encoding.ASCII.GetString(localHandshake);
             if (await Sock.SendAsync(localHandshake, SocketFlags.None, cts) == 0)
             {
                 Logger.Log($"Critical Error: could not send handshake message to {Ip}:{Port}!", source: "Peer Handshake");
+                tracker.Peers.Remove(this);
                 return false;
             }
             byte[] handshakeBuffer = new byte[1024];
@@ -81,7 +103,9 @@ namespace ArchTorrent.Core.PeerProtocol
             }
             catch(SocketException ex)
             {
-                Logger.Log($"Socket Exception Method: {ex.Message}");
+                Logger.Log($"Socket Exception Method: {ex.Message}, removing peer.");
+                tracker.Peers.Remove(this);
+                return false;
             }
             
             handshakeRecieved = handshakeRecieved == -1 ? 0 : handshakeRecieved;
@@ -89,6 +113,7 @@ namespace ArchTorrent.Core.PeerProtocol
             if(handshakeRecieved == 0)
             {
                 Logger.Log($"Peer {Ip}:{Port} responded with 0 bytes, Continuing.", source: "Peer Handshake");
+                tracker.Peers.Remove(this);
                 return false;
             }
 
@@ -103,15 +128,22 @@ namespace ArchTorrent.Core.PeerProtocol
             if(!(handshakeBuffer[0] + 49 == handshakeRecieved && Encoding.ASCII.GetString(handshakeBuffer.ReadBytes(1, handshakeBuffer[0])) == "BitTorrent protocol"))
             {
                 Logger.Log($"Parsing went wrong!", source: "Peer Handshake");
+                tracker.Peers.Remove(this);
                 return false;
             }
 
-            Logger.Log($"Handshake recieved correctly; starting download now", source: "Peer Handshake");
+            Logger.Log($"Handshake recieved correctly from {this}", source: "Peer Handshake");
             Logger.Log($"Now able to init download");
             return true;
         }
 
-        // handshake is very simple so no need for class
+        public async Task<bool> SendBitField()
+        {
+            
+
+            return false;
+        }
+
         private byte[] ConstructHandshake()
         {
 
@@ -145,6 +177,22 @@ namespace ArchTorrent.Core.PeerProtocol
             foreach(byte b in peer_id) { data.Add(b); }
 
             return data.ToArray();
+        }
+
+        public bool Equals(Peer? other)
+        {
+            return other != null && other.Ip == Ip;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null) return false;
+            if (obj is Peer)
+            {
+                var other = (Peer)obj;
+                return other.Ip == this.Ip;
+            }
+            return false;
         }
     }
 }

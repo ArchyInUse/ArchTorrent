@@ -148,7 +148,7 @@ namespace ArchTorrent.Core.Trackers
                 {
                     byte[] ip = bytePeers[i..(i + 4)];
                     byte[] port = bytePeers[(i + 4)..(i + 6)];
-                    peers.Add(new Peer(ip, port, Torrent.InfoHash));
+                    peers.Add(new Peer(ip, port, Torrent.InfoHash, this));
                 }
                 return peers;
             }
