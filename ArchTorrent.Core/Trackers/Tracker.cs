@@ -14,7 +14,19 @@ namespace ArchTorrent.Core.Trackers
         public Uri AnnounceURI { get; set; }
         public Torrent Torrent { get; set; }
         public List<Peer> Peers { get; set; } = new List<Peer>();
+        public bool DestroyPeer(Peer peer)
+        {
+            peer.Sock.Close();
+            if(!Peers.Contains(peer))
+            {
+                Logger.Log($"Tried to destroy peer that is not present in the Peers list, tracker: {this}");
+                return false;
+            }
+            return Peers.Remove(peer);
+        }
 
         public abstract Task<List<Peer>> TryGetPeers();
+
+        public override string ToString() => AnnounceUrl;
     }
 }

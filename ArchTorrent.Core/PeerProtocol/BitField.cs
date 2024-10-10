@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,8 +12,10 @@ namespace ArchTorrent.Core.PeerProtocol
         /// <summary>
         /// byte representation of the bitfield, edited by helper functions for simplicity of the peer objects.
         /// </summary>
+        [JsonIgnore]
         private byte[] _data;
 
+        [JsonIgnore]
         public byte[] Bitfield { get => _data; }
 
         /// <summary>
@@ -23,8 +26,10 @@ namespace ArchTorrent.Core.PeerProtocol
         /// The hashset is used instead of a list so that should a duplicate arrive, an exception can be raised, which will-
         /// reset the peer.
         /// </summary>
+        [JsonIgnore]
         private HashSet<int> ongoingDownloads = new();
 
+        [JsonIgnore]
         private readonly object _lock = new object();
 
         public TorrentBitField(int size)
@@ -138,9 +143,11 @@ namespace ArchTorrent.Core.PeerProtocol
 
         #region Json Helpers
 
+        [JsonProperty("BitfieldData")]
         public string Serialize
         {
             get => Convert.ToBase64String(_data);
+            set => _data = Convert.FromBase64String(value);
         }
 
         #endregion

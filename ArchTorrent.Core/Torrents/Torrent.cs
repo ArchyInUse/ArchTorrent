@@ -43,6 +43,9 @@ namespace ArchTorrent.Core.Torrents
         [JsonProperty]
         public List<Tracker> Trackers { get; set; } = new List<Tracker>();
 
+        [JsonProperty]
+        public TorrentBitField Bitfield { get; set; }
+
         #endregion
 
         #region Optional Fields
@@ -81,7 +84,6 @@ namespace ArchTorrent.Core.Torrents
             FullFilePath = fullPath;
             foreach(string announce in announces)
             {
-                // TODO: account for HTTP trackers
                 if (announce.StartsWith("http"))
                     Trackers.Add(new HttpTracker(this, announce));
                 else if(announce.StartsWith("udp"))
@@ -155,9 +157,11 @@ namespace ArchTorrent.Core.Torrents
             string announceURL = dict.Get<BString>("announce").ToString();
             BList? announceList = dict.Get<BList>("announce-list");
 
-            List<string> announces = new List<string>();
-            announces.Add(announceURL);
-            if(announceList != null)
+            List<string> announces = new List<string>
+            {
+                announceURL
+            };
+            if (announceList != null)
             {
                 foreach(var t in announceList)
                 {

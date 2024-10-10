@@ -26,6 +26,7 @@ namespace ArchTorrent.Core.PeerProtocol
         public Socket Sock { get; set; }
         public string InfoHash { get; set; }
         private Tracker tracker;
+        private TorrentBitField bitfield { get => tracker.Torrent.Bitfield; }
         public bool IsConnected { get => Sock.Connected; }
 
         public bool Am_Choking { get; private set; } = true;
@@ -35,7 +36,7 @@ namespace ArchTorrent.Core.PeerProtocol
         /// until the client is unchoked, The client should not attemt to send requests for blocks and it should consider all
         /// pending requests to be discarded by the remote peer.
         /// </summary>
-        public bool Peer_Choking { get;  private set; } = true;
+        public bool Peer_Choking { get; private set; } = true;
         public bool Peer_Interested { get; private set; } = false;
 
         /// <summary>
@@ -45,6 +46,9 @@ namespace ArchTorrent.Core.PeerProtocol
 
         // 32kb buffer
         private byte[] buffer = new byte[1024 * 32];
+
+        private byte[] peer_Bitfield;
+        private bool bitfieldReceived = false;
 
         public Peer(byte[] ip, Int16 port, string infoHash, Tracker tracker, string id = "")
         {
@@ -79,10 +83,10 @@ namespace ArchTorrent.Core.PeerProtocol
             // 2. have / bitfield messages
             Logger.Log($"Begin connection request...", source: "Peer Handshake");
             try
-            { 
+            {
                 await Sock.ConnectAsync(new IPEndPoint(Ip, Port));
             }
-            catch(SocketException)
+            catch (SocketException)
             {
                 Logger.Log($"Peer {Ip}:{Port} is unresponsive, destroying peer.", source: "Peer Handshake");
                 tracker.Peers.Remove(this);
@@ -101,16 +105,16 @@ namespace ArchTorrent.Core.PeerProtocol
             {
                 handshakeRecieved = await Sock.ReceiveAsync(handshakeBuffer, SocketFlags.None, cts);
             }
-            catch(SocketException ex)
+            catch (SocketException ex)
             {
                 Logger.Log($"Socket Exception Method: {ex.Message}, removing peer.");
                 tracker.Peers.Remove(this);
                 return false;
             }
-            
+
             handshakeRecieved = handshakeRecieved == -1 ? 0 : handshakeRecieved;
 
-            if(handshakeRecieved == 0)
+            if (handshakeRecieved == 0)
             {
                 Logger.Log($"Peer {Ip}:{Port} responded with 0 bytes, Continuing.", source: "Peer Handshake");
                 tracker.Peers.Remove(this);
@@ -120,12 +124,12 @@ namespace ArchTorrent.Core.PeerProtocol
             Array.Resize(ref handshakeBuffer, handshakeRecieved);
 
             var asStr = Encoding.ASCII.GetString(handshakeBuffer);
-            Logger.Log($"Handshake Response: {asStr}", source:"Peer Handshake");
+            Logger.Log($"Handshake Response: {asStr}", source: "Peer Handshake");
 
             // TODO: message error handling, maybe an IError interface on all of them to signal an error with a boolean
 
             // see if recieved the entire 
-            if(!(handshakeBuffer[0] + 49 == handshakeRecieved && Encoding.ASCII.GetString(handshakeBuffer.ReadBytes(1, handshakeBuffer[0])) == "BitTorrent protocol"))
+            if (!(handshakeBuffer[0] + 49 == handshakeRecieved && Encoding.ASCII.GetString(handshakeBuffer.ReadBytes(1, handshakeBuffer[0])) == "BitTorrent protocol"))
             {
                 Logger.Log($"Parsing went wrong!", source: "Peer Handshake");
                 tracker.Peers.Remove(this);
@@ -139,9 +143,34 @@ namespace ArchTorrent.Core.PeerProtocol
 
         public async Task<bool> SendBitField()
         {
-            
-
-            return false;
+            byte[] bitfield = tracker.Torrent.Bitfield.GetAvailabilityBitField();
+            using (CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+            {
+                try
+                {
+                    await Sock.SendAsync(new ArraySegment<byte>(bitfield), SocketFlags.None, cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    Logger.Log($"Bitfield was not received.", source: $"Peer: {this}, Tracker: {tracker}");
+                    tracker.DestroyPeer(this);
+                    return false;
+                }
+                catch (SocketException ex)
+                {
+                    Logger.Log($"Socket exception on bitfield message, {ex.Message}", source: $"Peer: {this}, Tracker: {tracker}");
+                    tracker.DestroyPeer(this);
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"Unexpected Error {ex.Message}");
+                    tracker.DestroyPeer(this);
+                    return false;
+                }
+            }
+            Logger.Log($"Sent bitfield successfully!", source: $"Peer: {this}, Tracker: {tracker}");
+            return true;
         }
 
         private byte[] ConstructHandshake()
@@ -165,16 +194,16 @@ namespace ArchTorrent.Core.PeerProtocol
 
             // pstr
             var pstr = Encoding.ASCII.GetBytes("BitTorrent protocol");
-            foreach(byte b in pstr) { data.Add(b); }
+            foreach (byte b in pstr) { data.Add(b); }
 
             // reserved
-            for(int i = 0; i < 8; i++) { data.Add(0); }
+            for (int i = 0; i < 8; i++) { data.Add(0); }
 
             var hash = Encoding.ASCII.GetBytes(InfoHash);
-            for(int i = 0; i < hash.Length; i++) { data.Add(hash[i]); }
+            for (int i = 0; i < hash.Length; i++) { data.Add(hash[i]); }
 
             var peer_id = TrackerMessageHelpers.GenerateID();
-            foreach(byte b in peer_id) { data.Add(b); }
+            foreach (byte b in peer_id) { data.Add(b); }
 
             return data.ToArray();
         }
