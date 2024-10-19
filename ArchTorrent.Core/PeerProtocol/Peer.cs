@@ -175,7 +175,6 @@ namespace ArchTorrent.Core.PeerProtocol
 
         private byte[] ConstructHandshake()
         {
-
             // handshake: <pstrlen><pstr><reserved><info_hash><peer_id>
 
             // pstrlen: string length of<pstr>, as a single raw byte
@@ -186,7 +185,6 @@ namespace ArchTorrent.Core.PeerProtocol
             // 
             // 
             // In version 1.0 of the BitTorrent protocol, pstrlen = 19, and pstr = "BitTorrent protocol".
-
             List<byte> data = new List<byte>();
 
             // pstrlen (constant)

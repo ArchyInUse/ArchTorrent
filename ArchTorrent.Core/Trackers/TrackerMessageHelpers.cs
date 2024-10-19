@@ -16,6 +16,7 @@ namespace ArchTorrent.Core.Trackers
         public const string ATVERSION = "-AT0001-";
 
         #region Encode Decode
+
         /// <summary>
         /// returns 2 byte array in big endian order
         /// </summary>
