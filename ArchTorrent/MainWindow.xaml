@@ -126,7 +126,14 @@
             <TabItem Header="Status" DataContext="{Binding SelectedTorrent}">
                 <Label Content="Content goes here..." Background="Transparent"/>
             </TabItem>
-            <TabItem Header="Details" />
+            <TabItem Header="Details" DataContext="{Binding SelectedTorrent}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="Name:"/>
+                        <Label Content="{Binding Name}"/>
+                    </StackPanel>
+                </StackPanel>
+            </TabItem>
             <TabItem Header="Files" />
             <TabItem Header="Peers" />
             <TabItem Header="Options" />

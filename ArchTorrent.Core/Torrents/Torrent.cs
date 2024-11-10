@@ -46,6 +46,9 @@ namespace ArchTorrent.Core.Torrents
         [JsonProperty]
         public TorrentBitField Bitfield { get; set; }
 
+        [JsonIgnore]
+        public TorrentDownloadState State { get; set; } = TorrentDownloadState.Paused;
+
         #endregion
 
         #region Optional Fields

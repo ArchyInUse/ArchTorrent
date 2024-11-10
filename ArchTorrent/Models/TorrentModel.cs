@@ -31,7 +31,6 @@ namespace ArchTorrent.Models
         public TorrentModel(Torrent torrent)
         {
             Torrent = torrent;
-            
         }
     }
 }

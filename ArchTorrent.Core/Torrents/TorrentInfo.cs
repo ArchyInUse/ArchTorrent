@@ -97,7 +97,6 @@ namespace ArchTorrent.Core.Torrents
             Pieces = infoDict.Get<BString>("pieces").Value.ToArray();
             var priv = infoDict.Get<BInteger>("private");
             if (priv != null && priv.Value != 0) Private = true;
-
         }
     }
 }
