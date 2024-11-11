@@ -47,7 +47,7 @@ namespace ArchTorrent.Core.Torrents
         public TorrentBitField Bitfield { get; set; }
 
         [JsonIgnore]
-        public TorrentDownloadState State { get; set; } = TorrentDownloadState.Paused;
+        public TorrentDownloadState State { get; } = TorrentDownloadState.Paused;
 
         #endregion
 
@@ -111,9 +111,9 @@ namespace ArchTorrent.Core.Torrents
                 tasks.Add(Trackers[i].TryGetPeers());
                 //tasks.Add(Task.Run(() => Trackers[i].TryGetPeers()));
             }
-            Logger.Log($"Amount of tasks: {tasks.Count}");
+            Logger.Log($"Amount of tasks: {tasks.Count}", source:"Torrent.GetPeers()");
             var b = await Task.WhenAll(tasks);
-            Logger.Log($"Completed all {tasks.Count} tasks!");
+            Logger.Log($"Completed all {tasks.Count} tasks!", source: "Torrent.GetPeers()");
             List<Tracker> toDel = new();
 
             foreach(var tracker in Trackers)
@@ -145,6 +145,7 @@ namespace ArchTorrent.Core.Torrents
                 }
             }
         }
+
         public async Task<bool> InitDownload()
         {
             await GetPeers();
@@ -152,7 +153,22 @@ namespace ArchTorrent.Core.Torrents
             return true;
         }
 
-        // TODO: implement
+        public async Task ChangeState(TorrentDownloadState newState)
+        {
+            if (State == newState) return;
+            
+            if(newState == TorrentDownloadState.Paused)
+            {
+                Logger.Log("State change to Paused, destroying all peers.");
+                Trackers.ForEach(x => x.Pause());
+            }
+            else if(newState == TorrentDownloadState.Downloading)
+            {
+                await GetPeers();
+            }
+            // TODO: add handler for seeding state change
+        }
+
         public static Torrent BCNetDictToATTorrent(BDictionary dict, string filePath = "")
         {
             // mandatory
